@@ -1,0 +1,40 @@
+10/15/12
+
+Ken Hwang, M.S.
+PSU, SLEIC, Dept. of Psychology
+
+Symmetry Project - Presentation and Response Recording
+Developed on MATLAB 7.10.0 (R2010a) and PsychToolbox 3.0.8
+
+Contents:
+- param_setup.m
+- symmetry.m
+- ‘data’ directory
+
+This script was designed for experimental protocols as of 7/2/12:
+- 1 second pattern presentation / 1 second blank presentation.
+- 5 pattern types (square, super-square, pi/2, pi/3, pi/4).
+- 5 presentations are repeated twice for a total of 10 presentations.
+- Response recording is based on change of fixation color (red/green).
+- Fixation color has a chance to change at each 1s presentation window.
+- Output is in comma-separated format, headers include (in column order):
+1. Block number
+2. Pattern type
+3. Fixation change
+4. Reaction time
+5. Hit/Miss
+
+Scripting Infrastructure:
+- Presentation and response recording are independent processes.
+- Press escape key at any time to abort script.
+- params_setup.m can be modified at your own risk. For example, timing is
+restricted to 1 second presentations – this cannot modified without adjusting
+object timer properties.
+- After presentation, output is saved to the ‘data’ directory.
+
+Usage:
+- Call ‘symmetry’ at MATLAB command line.
+- A prompt will ask whether manual (4.75s delay) or automated trigger start is
+required.
+- Next, a prompt will request subject ID information and date (entered by
+default). This data is used to name the output .csv file.
