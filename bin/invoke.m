@@ -3,7 +3,8 @@ classdef invoke < handle
     %   Detailed explanation goes here
     
     properties (SetObservable)
-        sequence = cell([1,1]);
+        sequence = cell(0);
+        meta = cell(0);        
         iter = 1;
     end
     
@@ -11,9 +12,9 @@ classdef invoke < handle
         function obj = invoke() 
         end
         
-        function startup(this,segment)
+        function register(this,segment,meta)
             this.sequence{end+1} = segment;
-            segment.startup();
+            this.meta{end+1} = meta;
         end
         function execute(this)
             this.sequence{this.iter}.execute();
@@ -24,8 +25,11 @@ classdef invoke < handle
 %             end
             this.iter = this.iter + 1;
 %             segment.execute();
-        end        
+        end
+        
+%         function unittests(this)
+%             strcmp('01',cellfun(@(y)(y.group),inv.meta,'UniformOutput',false))'
+%         end
     end
     
 end
-

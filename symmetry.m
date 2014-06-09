@@ -19,7 +19,7 @@ flags = {
 Client = client(flags);
 Client.bootstrap;
 
-PTBObj = ptb;
+Plugin = ptb(Client.get_defaults_value('debug'));
 
 % t = paradigm();
 

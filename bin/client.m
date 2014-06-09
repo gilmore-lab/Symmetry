@@ -110,7 +110,7 @@ classdef client < handle
             this.set_defaults_value('ptb',regexprep(num2str([ptb.major,ptb.minor,ptb.point]),'\s+','.'));
             
             % Parse arguments
-            % One argument expected, cell
+            % One argument expected, type cell
             if nargin == 1
                 flags = varargin{1};    
                 if ~isempty(flags)
@@ -159,6 +159,7 @@ classdef client < handle
         end
         
         function [d,n] = get_image_names(this)
+            % List image names
             d = this.listDirectory(this.get_defaults_value('input'),this.get_defaults_value('inputtype'));
             d = this.parseListing(d);
             n = length(d);
@@ -173,6 +174,7 @@ classdef client < handle
         end
         
         function [img,n] = load_image_matrix(this,d)
+            % Load images into image matrix
             img = cell([size(d,1) 1]);
             for i = 1:length(d)
                 try
@@ -218,6 +220,7 @@ classdef client < handle
                 fprintf('\t%s\n',this.get_defaults_value('output'));
             end
             
+            % Media
             images = this.get_image_names;
             [this.data,~] = this.load_image_matrix(images);
         end

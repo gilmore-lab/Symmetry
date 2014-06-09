@@ -56,12 +56,12 @@ classdef ptb < handle
     end
     
     methods
-        function obj = ptbdisplay(debug)
+        function obj = ptb(debug)
             if debug
-                % Find out how many screens and use lowest screen number (laptop screen).
+                % Find out how many screens and use largest screen number (desktop, dev extended monitor screen).
                 whichScreen = max(Screen('Screens'));
             else
-                % Find out how many screens and use largest screen number (desktop screen).
+                % Find out how many screens and use lowest screen number (entire screen).
                 whichScreen = min(Screen('Screens'));
             end
             
@@ -133,6 +133,14 @@ classdef ptb < handle
                 disp(me);
                 result = 1;
             end
+        end
+        
+        function [w] = get_window(this)
+           w = this.w; 
+        end
+        
+        function [tex] = get_tex(this)
+           tex = this.tex; 
         end
 %         
 %         %% Fixshow

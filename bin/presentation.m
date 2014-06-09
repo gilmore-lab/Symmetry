@@ -2,17 +2,12 @@ classdef presentation < handle
        % Presentation object
     
     properties (SetAccess = protected, GetAccess = protected)
-       IMAGETYPE = 'pgm'
        debug
-%         fix_color = {uint8([255, 0, 0]),uint8([0, 255, 0])};
-%         fix_radius = 5;
-%         fix_line = 2;
-%         fix_p_chg = .7;
-%         fix_type = {'FillOval'};
     end
     
     properties
-        
+        IMAGE
+        FIX
     end
     
 %     methods (Static)
@@ -57,21 +52,20 @@ classdef presentation < handle
 % %         
 %     end
     methods
-        function setName(this,name)
-            if (this.debug)
-                disp('setName')
-            else
-                this.NAME = name;
-            end
-        end
-        function name = getName(this)
-            if (this.debug)
-                disp('getName')
-                name = [];
-            else
-                name = this.NAME;
-            end
-        end        
+%         function setName(this,name)
+%             if (this.debug)
+%                 disp('setName')
+%             else
+%                 this.NAME = name;
+%             end
+%         end
+%         function setPath(this,path)
+%             if (this.debug)
+%                 disp('setPath')
+%             else
+%                 this.PATH = path;
+%             end
+%         end
         function setImage(this,img)
             if (this.debug)
                 disp('setImage')
@@ -79,10 +73,33 @@ classdef presentation < handle
                 this.IMAGE = img;
             end
         end
+%         function name = getName(this)
+%             if (this.debug)
+%                 disp('getName')
+%                 name = [];
+%             else
+%                 name = this.NAME;
+%             end
+%         end
+%         function path = getPath(this)
+%             if (this.debug)
+%                 disp('getPath')
+%                 path = [];
+%             else
+%                 path = this.PATH;
+%             end
+%         end
+        function img = getImage(this)
+            if (this.debug)
+                disp('getImage')
+                img = [];
+            else
+                img = this.IMAGE;
+            end
+        end
     end
 
     methods (Abstract)
-       startup(obj)
        execute(obj)
     end
     
