@@ -3,7 +3,7 @@ classdef segment < presentation
     %   Detailed explanation goes here
     
     events
-        flip
+        go
     end
 
     methods
@@ -15,7 +15,7 @@ classdef segment < presentation
         end
         
         function execute(this)
-            notify(this,'flip');
+            notify(this,'go');
         end
     end    
 end

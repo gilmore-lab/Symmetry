@@ -1,4 +1,4 @@
-function [t,kill] = paradigm(Client,Plugin)
+function [t,kill_hdl,routine] = paradigm(client,plugin)
 
 % % % UI entry 
 % % % prompt1 = {'Subject ID (YYMMDDffll):', 'Date (YYMMDD):'};
@@ -25,9 +25,9 @@ function [t,kill] = paradigm(Client,Plugin)
 % pat = '1(?<group>\d{2,2})0(?<image>\d{2,2})[.](?<imagetype>\w+)';
 pat = '1(?<group>\d{2,2})0(?<image>\d{2,2})';
 re = @(y)regexp(y,pat,'names');
-[img_names,files_n] = Client.get_image_names;
+[img_names,files_n] = client.get_image_names;
 meta = cellfun(re,img_names);
-data = Client.data;
+data = client.data;
 
 % Metadata mapping
 for i = 1:files_n
@@ -67,7 +67,6 @@ iter_some_subvar = jitterOrder;
 
 % Timing
 
-
 % Task
 % if task
 %         fix_color = {uint8([255, 0, 0]),uint8([0, 255, 0])};
@@ -79,38 +78,40 @@ iter_some_subvar = jitterOrder;
 % Pres to segments, response out to timer
 
 % Register
-inv = invoke(Plugin);
+inv = Invoke(client,plugin);
+routine = {}; % push
 for iter_index = 1:length(top_iter)
     
     % Multiple segment registration for iter_some_subvar
     data_index1 = datasample(var_i{1},iter_some_subvar(iter_index),'Replace',false);
     for i = 1:length(data_index1)
         inv.register(segment(data{data_index1(i)}),meta(data_index1(i)));
+        routine(end+1,:) = {meta(data_index1(i)).name,meta(data_index1(i)).group,meta(data_index1(i)).image};
     end
     % Individual segment registration for top_iter
     data_index2 = var_i{top_iter(iter_index)}(1);
     var_i{top_iter(iter_index)}(1) = []; % pop
     inv.register(segment(data{data_index2}),meta(data_index2));
+    routine(end+1,:) = {meta(data_index2).name,meta(data_index2).group,meta(data_index2).image};
 end
 
-kill = [];
-% kill = @abort;
+kill_hdl = @kill;
 
 t = timer;
-set(t, 'Name', Client.get_defaults_value('id'),...
+set(t, 'Name', client.get_defaults_value('id'),...
     'ExecutionMode', 'fixedRate', ...
     'Period', 1, ...
     'StartFcn', @(obj,evt)inv.gate, ...
     'TimerFcn', @(obj,evt)inv.execute, ...
+    'StopFcn', @(obj,evt)inv.stopcbk, ...
     'TasksToExecute', length(top_iter));
 
-%    'StopFcn',stop_callbck, ...
 %    'ErrorFcn', @err_callbck,'UserData', 1, 'StartDelay', 1);
 
-%     function abort()
-%         stop(t)
-%         delete(t)
-%     end
+    function kill(t)
+        stop(t)
+        delete(t)
+    end
 
 end
 

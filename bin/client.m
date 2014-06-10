@@ -1,8 +1,8 @@
-classdef client < handle
+classdef Client < handle
     %CLIENT Summary of this function goes here
     %   Detailed explanation goes here
     
-    properties
+    properties (SetAccess = private, GetAccess = private)
         defaults = {
             'debug',false;...
             'verbose',false;...
@@ -23,7 +23,11 @@ classdef client < handle
             'ptb';...
             'paradigm';
             };
+    end
+    
+    properties
         data
+        out 
     end
     
     methods (Static)
@@ -48,6 +52,7 @@ classdef client < handle
             ME = MException('client:incorrectFileReference', ...
                 'File path, "%s", is the incorrect reference for this build.', wrong_path);
         end
+        
         function d = listDirectory(path,varargin)
             % Directory list
             % Search path with optional wildcards
@@ -86,6 +91,7 @@ classdef client < handle
                 error('client (listDirectory): Unsupported OS.');
             end
         end
+        
         function d = parseListing(list)
             % Parse directory listing
             % Only tested on PC
@@ -101,7 +107,7 @@ classdef client < handle
     end
     
     methods
-        function this = client(varargin)
+        function this = Client(varargin)
             % Set ptb
             [~,ptb] = PsychtoolboxVersion;
             this.set_defaults_value('ptb',regexprep(num2str([ptb.major,ptb.minor,ptb.point]),'\s+','.'));
@@ -223,6 +229,18 @@ classdef client < handle
             % Media
             images = this.get_image_names;
             [this.data,~] = this.load_image_matrix(images);
+        end
+        
+        function verboseDisplay(this,src,evt)
+            if this.get_defaults_value('verbose')
+                disp('------')
+                fprintf(evt.AffectedObject.verbosemsg);
+                disp('------')
+            end
+        end
+        
+        function record(this,src,evt)
+            
         end
     end
 end

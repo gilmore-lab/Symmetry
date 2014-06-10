@@ -1,4 +1,4 @@
-classdef ptb < handle
+classdef PTB < handle
     %ptb Summary of this class goes here
     %   Detailed explanation goes here
     
@@ -64,7 +64,7 @@ classdef ptb < handle
     end
     
     methods
-        function obj = ptb(debug,verbose)
+        function obj = PTB(debug,verbose)
             obj.debug = debug;
             obj.verbose = verbose;
             if obj.debug
@@ -165,14 +165,14 @@ classdef ptb < handle
             this.flip;
         end
         
-        function drawimg(this,img)
+        function [secs] = drawimg(this,img)
             this.tex = Screen('MakeTexture',this.w,img);
             Screen('DrawTexture',this.w,this.tex);
             if this.debug
                 this.debugmsg = 'ptb.drawimg';
             end
             
-            this.flip;
+            [secs] = this.flip;
         end
         
         function [secs] = flip(this)
