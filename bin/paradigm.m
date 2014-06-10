@@ -65,6 +65,9 @@ top_iter = condOrder;
 iter_some_subvar = jitterOrder;
 % Deprecate in future release
 
+% Timing
+
+
 % Task
 % if task
 %         fix_color = {uint8([255, 0, 0]),uint8([0, 255, 0])};
@@ -94,10 +97,15 @@ kill = [];
 % kill = @abort;
 
 t = timer;
-set(t, 'Name', 'test', 'ExecutionMode', 'fixedRate', 'Period', 1, ...
-    'StartFcn', @(obj,evt)inv.gate, 'TimerFcn', @(obj,evt)inv.execute, 'TasksToExecute', length(top_iter));
-%             , 'StopFcn',stop_callbck, ...
-%                 'ErrorFcn', @err_callbck, 'TasksToExecute', 2, 'UserData', 1, 'StartDelay', 1);
+set(t, 'Name', Client.get_defaults_value('id'),...
+    'ExecutionMode', 'fixedRate', ...
+    'Period', 1, ...
+    'StartFcn', @(obj,evt)inv.gate, ...
+    'TimerFcn', @(obj,evt)inv.execute, ...
+    'TasksToExecute', length(top_iter));
+
+%    'StopFcn',stop_callbck, ...
+%    'ErrorFcn', @err_callbck,'UserData', 1, 'StartDelay', 1);
 
 %     function abort()
 %         stop(t)

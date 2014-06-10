@@ -51,7 +51,6 @@ classdef invoke < handle
             this.plugin.drawimg(src.IMAGE)
         end
         
-        
         %     function err_callbck(~,~)
         %
         %         %disp(event.Data.Message)
