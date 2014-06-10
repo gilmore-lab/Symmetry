@@ -2,6 +2,16 @@ classdef ptb < handle
     %ptb Summary of this class goes here
     %   Detailed explanation goes here
     
+    properties (SetAccess = private, GetAccess = private)
+        w
+        debug
+        debugmsg
+        verbose
+        verbosemsg
+        autoclosetex = true
+        tex
+    end
+    
     properties
         whichScreen
         rect
@@ -11,8 +21,6 @@ classdef ptb < handle
         white
         gray
         absoluteDifferenceBetweenWhiteAndGray
-        w
-        tex
     end
     
     methods (Static)
@@ -24,7 +32,7 @@ classdef ptb < handle
             keys.esckey = KbName('Escape');
             keys.spacekey = KbName('SPACE');
         end
-                
+        
         function initPres
             % initPres
             ListenChar(2);
@@ -52,12 +60,14 @@ classdef ptb < handle
             
             % Close all screens
             Screen('CloseAll');
-        end 
+        end
     end
     
     methods
-        function obj = ptb(debug)
-            if debug
+        function obj = ptb(debug,verbose)
+            obj.debug = debug;
+            obj.verbose = verbose;
+            if obj.debug
                 % Find out how many screens and use largest screen number (desktop, dev extended monitor screen).
                 whichScreen = max(Screen('Screens'));
             else
@@ -104,55 +114,110 @@ classdef ptb < handle
             %             Screen('TextStyle',monitor.display_window,0);
         end
         
+        function [w] = getWindow(this)
+            w = this.w;
+        end
+        
+        function [tex] = getTex(this)
+            tex = this.tex;
+        end
+        
+        function setVerboseMsg(this,txt)
+            this.verbosemsg = txt;
+        end
+        
+        function txt = getVerboseMsg(this)
+            txt = this.verbosemsg;
+        end
+        
+        function [result] = toggleAutoCloseTex(this)
+            this.autoclosetex = ~this.autoclosetex;
+            result = this.autoclosetex;
+        end
+        
+        function settxt(this,txt)
+            DrawFormattedText(this.w,txt,'center','center',this.black);
+        end
+        
+        function setdebugtxt(this)
+            DrawFormattedText(this.w,['Debug\n' this.debugmsg],'center',[],[255 0 0]);
+        end
+        
+        function setverbosetxt(this)
+            DrawFormattedText(this.w,['Verbose\n' this.verbosemsg],[],[],[255 0 0]);
+        end
+        
         function open(this)
             [this.w, this.rect] = Screen('OpenWindow', this.whichScreen, this.gray); % Open Screen
+            if this.debug
+                this.debugmsg = 'ptb.open';
+            end
+            
+            this.flip;
         end
         
-        function blank(this)
+        function drawblank(this)
             Screen('FillRect',this.w,this.gray);
-            Screen('Flip',this.w);
+            if this.debug
+                this.debugmsg = 'ptb.drawblank';
+            end
+            
+            this.flip;
         end
         
-        function [secs] = screenflip(this)
-            % screenflip
-            [secs] = Screen('Flip',this.w);
-        end
-        
-        function mkimg(this,img)
-            % mkimg
+        function drawimg(this,img)
             this.tex = Screen('MakeTexture',this.w,img);
             Screen('DrawTexture',this.w,this.tex);
+            if this.debug
+                this.debugmsg = 'ptb.drawimg';
+            end
+            
+            this.flip;
         end
         
-        function [result] = closetex(this)
-            % Closetex
-            try
-                Screen('close',this.tex);
-                result = 0;
-            catch me
-                disp(me);
-                result = 1;
+        function [secs] = flip(this)
+            % flip
+            if this.debug
+                this.setdebugtxt;
+            end
+            if this.verbose
+                [secs] = Screen('Flip',this.w,[],1);
+                this.setVerboseMsg([this.getVerboseMsg sprintf('%s:%s\n','Flip',num2str(secs))]);
+                this.setverbosetxt;
+                Screen('Flip',this.w,[],0);
+            else
+                [secs] = Screen('Flip',this.w);
+            end
+            
+            if this.autoclosetex
+                if ~this.closetex
+                    fprintf('%s\n','ptb.flip: Issue with auto-closing tex.  Aborting....');
+                    this.endPres;
+                end
             end
         end
         
-        function [w] = get_window(this)
-           w = this.w; 
+        function [result] = closetex(this)
+            try
+                Screen('close',this.getTex);
+                this.tex = [];
+                result = true;
+            catch me
+                disp(me);
+                result = false;
+            end
         end
         
-        function [tex] = get_tex(this)
-           tex = this.tex; 
-        end
-%         
-%         %% Fixshow
-%         % Arguments: Monitor data structure
-%         function fixshow(monitor)
-% %             x_offset = 7;
-% %             y_offset = 25;
-% %             xy_offset = [x_offset y_offset];
-%             Screen('DrawLine',monitor.w,monitor.black,(monitor.center_W-20)-xy_offset(1),monitor.center_H-xy_offset(2),(monitor.center_W+20)-xy_offset(1),monitor.center_H-xy_offset(2),7);
-%             Screen('DrawLine',monitor.w,monitor.black,monitor.center_W-xy_offset(1),(monitor.center_H-20)-xy_offset(2),monitor.center_W-xy_offset(1),(monitor.center_H+20)-xy_offset(2),7);
-%             Screen('Flip',monitor.w);
-%         end
+        %         %% Fixshow
+        %         % Arguments: Monitor data structure
+        %         function fixshow(monitor)
+        % %             x_offset = 7;
+        % %             y_offset = 25;
+        % %             xy_offset = [x_offset y_offset];
+        %             Screen('DrawLine',monitor.w,monitor.black,(monitor.center_W-20)-xy_offset(1),monitor.center_H-xy_offset(2),(monitor.center_W+20)-xy_offset(1),monitor.center_H-xy_offset(2),7);
+        %             Screen('DrawLine',monitor.w,monitor.black,monitor.center_W-xy_offset(1),(monitor.center_H-20)-xy_offset(2),monitor.center_W-xy_offset(1),(monitor.center_H+20)-xy_offset(2),7);
+        %             Screen('Flip',monitor.w);
+        %         end
     end
     
 end

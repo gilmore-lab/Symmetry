@@ -1,4 +1,4 @@
-function [varargout] = paradigm(Client,Plugin)
+function [t,kill] = paradigm(Client,Plugin)
 
 % % % UI entry 
 % % % prompt1 = {'Subject ID (YYMMDDffll):', 'Date (YYMMDD):'};
@@ -73,10 +73,10 @@ iter_some_subvar = jitterOrder;
 %         fix_p_chg = .7;
 %         fix_type = {'FillOval'};
 %
-% To segments, out timer
+% Pres to segments, response out to timer
 
 % Register
-inv = invoke();
+inv = invoke(Plugin);
 for iter_index = 1:length(top_iter)
     
     % Multiple segment registration for iter_some_subvar
@@ -90,19 +90,19 @@ for iter_index = 1:length(top_iter)
     inv.register(segment(data{data_index2}),meta(data_index2));
 end
 
-disp('debug')
-% cbk = @(obj,evt)inv.execute;
+kill = [];
+% kill = @abort;
 
-% t = timer;
-% set(t, 'Name', 'test', 'ExecutionMode', 'fixedRate', 'Period', 1, ...
-%     'StartFcn', @start_callbck, 'TimerFcn', cbk, 'TasksToExecute', 2);
-% %             , 'StopFcn',stop_callbck, ...
-% %                 'ErrorFcn', @err_callbck, 'TasksToExecute', 2, 'UserData', 1, 'StartDelay', 1);
-% 
-%     function start_callbck(obj,~)
-%         disp('started')
+t = timer;
+set(t, 'Name', 'test', 'ExecutionMode', 'fixedRate', 'Period', 1, ...
+    'StartFcn', @(obj,evt)inv.gate, 'TimerFcn', @(obj,evt)inv.execute, 'TasksToExecute', length(top_iter));
+%             , 'StopFcn',stop_callbck, ...
+%                 'ErrorFcn', @err_callbck, 'TasksToExecute', 2, 'UserData', 1, 'StartDelay', 1);
+
+%     function abort()
+%         stop(t)
+%         delete(t)
 %     end
-
 
 end
 

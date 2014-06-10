@@ -1,10 +1,6 @@
 classdef client < handle
-%CLIENT Summary of this function goes here
-%   Detailed explanation goes here
-    
-%     properties (SetAccess = private)
-%         debug = false;
-%     end
+    %CLIENT Summary of this function goes here
+    %   Detailed explanation goes here
     
     properties
         defaults = {
@@ -18,6 +14,7 @@ classdef client < handle
             'platform',computer;
             'matlab',version;
             'ptb','';
+            'java',version('-java');
             };
         build = {
             'invoke';...
@@ -36,12 +33,12 @@ classdef client < handle
         end
         function ME = unrecognizedArgument(wrong_argument)
             ME = MException('client:unrecognizedArgument', ...
-                                'Unrecognized argument "%s".', wrong_argument);
+                'Unrecognized argument "%s".', wrong_argument);
         end
         function ME = missingFile(req_file)
             ME = MException('client:missingFile', ...
-                        'File "%s" not found', req_file);
-        end                
+                'File "%s" not found', req_file);
+        end
         function ME = missingParameter(no_param)
             ME = MException('client:missingParameter', ...
                 'Parameter, "%s", value empty.', no_param);
@@ -50,7 +47,7 @@ classdef client < handle
         function ME = incorrectFileReference(wrong_path)
             ME = MException('client:incorrectFileReference', ...
                 'File path, "%s", is the incorrect reference for this build.', wrong_path);
-        end 
+        end
         function d = listDirectory(path,varargin)
             % Directory list
             % Search path with optional wildcards
@@ -112,13 +109,13 @@ classdef client < handle
             % Parse arguments
             % One argument expected, type cell
             if nargin == 1
-                flags = varargin{1};    
+                flags = varargin{1};
                 if ~isempty(flags)
                     for i = 1:size(flags,1)
                         if any(strcmp(flags{i,1},this.defaults(:,1)))
                             if strcmp(class(this.defaults{i,2}),class(flags{i,2}))
                                 set_defaults_value(this,flags{i,1},flags{i,2});
-%                                 this.defaults{strcmp(flags{i,1},this.defaults(:,1)),2} = flags{i,2};
+                                %                                 this.defaults{strcmp(flags{i,1},this.defaults(:,1)),2} = flags{i,2};
                             else
                                 ME = this.invalidArgumentType(class(flags{i,2}),this.defaults{i,1});
                                 throw(ME);
@@ -152,7 +149,7 @@ classdef client < handle
             % Return by key
             value = this.defaults{strcmp(this.defaults(:,1),key),2};
         end
-                
+        
         function set_defaults_value(this,key,value)
             % Set value by key
             this.defaults{strcmp(this.defaults(:,1),key),2} = value;
@@ -196,6 +193,9 @@ classdef client < handle
         end
         
         function bootstrap(this)
+            % Random seed
+            rng('shuffle');
+            
             % Assert file existence and validity
             for i = 1:size(this.build,1)
                 if isempty(which(this.build{i}))
@@ -211,7 +211,7 @@ classdef client < handle
             % Path construction
             fullpath = fullfile(this.get_defaults_value('path'),this.get_defaults_value('input'));
             this.set_defaults_value('input',fullpath);
-            fullpath = fullfile(this.get_defaults_value('path'),this.get_defaults_value('output'));            
+            fullpath = fullfile(this.get_defaults_value('path'),this.get_defaults_value('output'));
             this.set_defaults_value('output',fullpath);
             if this.get_defaults_value('verbose')
                 fprintf('%s...\n','input path');
@@ -226,4 +226,3 @@ classdef client < handle
         end
     end
 end
-
