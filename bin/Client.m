@@ -10,6 +10,7 @@ classdef Client < handle
             'input','';
             'inputtype','PGM';
             'output','';
+            'io','';
             'id',datestr(now,30);
             'platform',computer;
             'matlab',version;
@@ -135,12 +136,8 @@ classdef Client < handle
             end
             
             % Verify arguments
-            for i = 1:size(this.defaults,1)
-                if isempty(this.defaults{i,2})
-                    ME = this.missingParameter(this.defaults{i,1});
-                    throw(ME);
-                end
-                if this.get_defaults_value('verbose')
+            if this.get_defaults_value('verbose')
+                for i = 1:size(this.defaults,1)
                     fprintf('%s...\n',this.defaults{i,1});
                     if ischar(this.defaults{i,2})
                         fprintf('\t%s\n',this.defaults{i,2});
@@ -215,20 +212,31 @@ classdef Client < handle
             end
             
             % Path construction
+            if isempty(this.get_defaults_value('path'))
+                ME = this.missingParameter(this.get_defaults_value('path'));
+                throw(ME);
+            end
+                
             fullpath = fullfile(this.get_defaults_value('path'),this.get_defaults_value('input'));
             this.set_defaults_value('input',fullpath);
             fullpath = fullfile(this.get_defaults_value('path'),this.get_defaults_value('output'));
             this.set_defaults_value('output',fullpath);
+            fullpath = fullfile(this.get_defaults_value('path'),this.get_defaults_value('io'));
+            this.set_defaults_value('io',fullpath);
             if this.get_defaults_value('verbose')
                 fprintf('%s...\n','input path');
                 fprintf('\t%s\n',this.get_defaults_value('input'));
                 fprintf('%s...\n','output path');
                 fprintf('\t%s\n',this.get_defaults_value('output'));
+                fprintf('%s...\n','io path');
+                fprintf('\t%s\n',this.get_defaults_value('io'));
             end
             
             % Media
             images = this.get_image_names;
             [this.data,~] = this.load_image_matrix(images);
+            
+            % I/O
         end
         
         function verboseDisplay(this,src,evt)
