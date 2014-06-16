@@ -8,14 +8,21 @@ classdef Invoke < handle
     end
     
     properties
+        debug
         plugin
         sequence = cell(0);
         meta = cell(0);
         iter = 1;
+        t0 = NaN;
     end
     
     methods
         function obj = Invoke(client,plugin)
+            obj.debug = client.get_defaults_value('debug');
+            if obj.debug
+               obj.t0 = GetSecs; 
+            end
+            
             obj.plugin = plugin;
             if isempty(plugin.getWindow)
                 fprintf('%s\n','Invoke(): No window initialized.');
@@ -25,11 +32,19 @@ classdef Invoke < handle
         
         function listenToProps(this,client)
             addlistener(this,'verbosemsg','PostSet',@client.verboseDisplay);
-            addlistener(this,'write','PostSet',@client.record);
+            if this.debug
+                addlistener(this,'write','PostSet',@client.debugCb);
+            else
+                addlistener(this,'write','PostSet',@client.record);
+            end
         end
         
         function listenTo(this,segment)
-            addlistener(segment,'go',@this.respond);
+            if this.debug
+                addlistener(segment,'go',@this.debugRespond);
+            else
+                addlistener(segment,'go',@this.respond);
+            end
         end
         
         function register(this,segment,meta)
@@ -47,21 +62,29 @@ classdef Invoke < handle
         %             strcmp('01',cellfun(@(y)(y.group),inv.meta,'UniformOutput',false))'
         %         end
         
-        function gate(this)
-            % KB press
-            KbStrokeWait;
-            % Trigger
+        
+        function markonset(this)
+            this.t0 = GetSecs;
         end
         
         function respond(this,src,evt)
+%             On-screen verbosity
             msg = sprintf('%s: %s\n%s: %s\n%s: %s\n', ...
                 'Name',this.meta{this.iter}.name, ...
                 'Group',this.meta{this.iter}.group, ...
                 'Image',this.meta{this.iter}.image);
             this.plugin.setVerboseMsg(msg);
             secs = this.plugin.drawimg(src.IMAGE);
-            this.verbosemsg = [msg sprintf('%s: %d\n','Onset',secs)];
-%             this.write
+%             % Matlab command-line verbosity
+            this.verbosemsg = [msg sprintf('%s: %d\n%s: %6.2f\n','Onset',secs,'Relative Onset',secs - this.t0)];
+            this.write = {this.meta{this.iter}.group,secs-this.t0};
+        end
+        
+        function debugRespond(this,src,evt)
+            this.write = {this.meta{this.iter}.name,...
+                this.meta{this.iter}.group,...
+                this.meta{this.iter}.image,...
+                GetSecs-this.t0};
         end
         
         function stopcbk(this)

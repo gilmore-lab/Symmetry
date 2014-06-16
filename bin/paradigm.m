@@ -1,4 +1,4 @@
-function [t,kill_hdl,routine] = paradigm(client,plugin)
+function [t,kill_hdl,routine,debug_exec] = paradigm(client,plugin)
 
 % % % UI entry 
 % % % prompt1 = {'Subject ID (YYMMDDffll):', 'Date (YYMMDD):'};
@@ -36,6 +36,9 @@ for i = 1:files_n
 end
 var_1 = '01';
 var_n = unique({meta(:).group});var_n = var_n(~strcmp(var_n,var_1));
+
+% Formatting output buffer
+format_output(client,{var_1,var_n{:}},1);
 
 % Subdivisions, image index, and validation
 var_i = {}; % push
@@ -87,6 +90,7 @@ for iter_index = 1:length(top_iter)
     for i = 1:length(data_index1)
         inv.register(segment(data{data_index1(i)}),meta(data_index1(i)));
         routine(end+1,:) = {meta(data_index1(i)).name,meta(data_index1(i)).group,meta(data_index1(i)).image};
+        % Keep data structure
     end
     % Individual segment registration for top_iter
     data_index2 = var_i{top_iter(iter_index)}(1);
@@ -96,21 +100,55 @@ for iter_index = 1:length(top_iter)
 end
 
 kill_hdl = @kill;
+debug_exec = @(obj,evt)inv.execute;
 
 t = timer;
 set(t, 'Name', client.get_defaults_value('id'),...
     'ExecutionMode', 'fixedRate', ...
     'Period', 1, ...
-    'StartFcn', @(obj,evt)inv.gate, ...
+    'StartFcn', @(obj,evt)inv.markonset, ...
     'TimerFcn', @(obj,evt)inv.execute, ...
     'StopFcn', @(obj,evt)inv.stopcbk, ...
-    'TasksToExecute', length(top_iter));
+    'TasksToExecute', size(routine,1));
 
 %    'ErrorFcn', @err_callbck,'UserData', 1, 'StartDelay', 1);
 
     function kill(t)
         stop(t)
         delete(t)
+    end
+        
+    function format_output(client,splitBy,keepInMemory)
+        % Format: 
+        % Output cell based on conditions, items to keep in
+        % memory before rewrite (per condition), and setting recoring
+        % callback based on paradigm
+        if any(strcmp('out',properties(client)))
+            client.out = cell([keepInMemory length(splitBy)]);
+        else
+            ME = client.missingParameter('out');
+            throw(ME);
+        end
+        
+        if any(strcmp('out',properties(client)))
+            client.header = splitBy;
+        else
+            ME = client.missingParameter('header');
+            throw(ME);
+        end
+        
+        if any(strcmp('recordCb',properties(client)))
+            client.recordCb = @recordCb;
+        else
+            ME = client.missingParameter('recordCb');
+            throw(ME);
+        end
+        
+        function recordCb(splitByString,value)
+            % Add to an output buffer
+            % No writing functions
+            client.out{keepInMemory,strcmp(splitByString,client.header)} = value;
+        end
     end
 
 end

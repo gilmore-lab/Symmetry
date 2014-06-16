@@ -184,6 +184,7 @@ classdef PTB < handle
                 [secs] = Screen('Flip',this.w,[],1);
                 this.setVerboseMsg([this.getVerboseMsg sprintf('%s:%s\n','Flip',num2str(secs))]);
                 this.setverbosetxt;
+                this.setVerboseMsg([]);
                 Screen('Flip',this.w,[],0);
             else
                 [secs] = Screen('Flip',this.w);

@@ -24,11 +24,18 @@ classdef Client < handle
             'ptb';...
             'paradigm';
             };
+        writeBuffer
+        threadManager
+    end
+    
+    properties (SetObservable)
+        out
     end
     
     properties
         data
-        out 
+        header
+        recordCb
     end
     
     methods (Static)
@@ -195,6 +202,29 @@ classdef Client < handle
             end
         end
         
+        function setupThreadManager(this)
+            this.threadManager = threadio.ProcessThreadManager;
+            this.writeBuffer = threadio.WriteData;
+            this.threadManager.addProcess(this.writeBuffer);
+%             rd = ReadData;
+%             this.threadManager.addProcess(rd);
+            addlistener(this,'out','PostSet',@this.addToBuffer);
+        end
+        
+        function addToBuffer(this,src,evt)
+            if ~all(cellfun(@isempty,this.out))
+                javaMethodEDT('appendToValues',this.writeBuffer,max(cell2mat(this.out)));
+            end
+        end
+        
+        function startThreads(this)
+            javaMethodEDT('startAll',this.threadManager);
+        end
+        
+        function stopThreads(this)
+            javaMethodEDT('stopAll',this.threadManager);
+        end
+        
         function bootstrap(this)
             % Random seed
             rng('shuffle'); % R2011b
@@ -237,6 +267,9 @@ classdef Client < handle
             [this.data,~] = this.load_image_matrix(images);
             
             % I/O
+            javaaddpath(this.get_defaults_value('io'));
+            import threadio.*
+            this.setupThreadManager;
         end
         
         function verboseDisplay(this,src,evt)
@@ -248,7 +281,11 @@ classdef Client < handle
         end
         
         function record(this,src,evt)
-            
+            this.recordCb(evt.AffectedObject.write{1},evt.AffectedObject.write{2});
+        end
+        
+        function debugCb(this,src,evt)
+            this.recordCb(evt.AffectedObject.write{2},evt.AffectedObject.write{4});
         end
     end
 end

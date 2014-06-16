@@ -8,39 +8,56 @@ bin = [p filesep 'bin'];
 addpath(bin);
 
 flags = {
-    'debug',true;
+    'debug',false;
     'verbose',true;
     'path',p;
     'input','stim';
     'output','data';
+    'io','io';    
     };
 
 client = Client(flags);
 client.bootstrap;
 
-plugin = PTB(client.get_defaults_value('debug'),client.get_defaults_value('verbose'));
-plugin.open;
+% plugin = PTB(client.get_defaults_value('debug'),client.get_defaults_value('verbose'));
+plugin = PTB(~client.get_defaults_value('debug'),client.get_defaults_value('verbose'));
 
-[t,kill,routine] = paradigm(client,plugin);
-
-plugin.initPres;
-
-start(t)
-
-pause(1) % temp
-while strcmp('on', get(t,'Running')) % While timer is running
+if client.get_defaults_value('debug')
+    [~,~,~,debug_exec] = paradigm(client,plugin);
+    debug_exec();
+else
+    plugin.open;
     
-    [keyIsDown, ~, ~] = KbCheck;
+    [t,kill,routine] = paradigm(client,plugin);
+
+    plugin.initPres;
     
-    if keyIsDown
-        kill(t)
-        break;
+    % KB press
+    % Trigger
+    % GetSecs;
+    KbStrokeWait;
+    
+    client.startThreads;
+    start(t);
+
+    pause(1) % temp
+    while strcmp('on', get(t,'Running')) % While timer is running
+
+        [keyIsDown, ~, ~] = KbCheck;
+
+        if keyIsDown
+            kill(t)
+            break;
+        end
+
     end
-    
+
+    plugin.endPres;
+    client.stopThreads;
 end
 
-plugin.endPres;
-
+disp('debug');
+    
 % % Initializing
 % stimonset = [];
 
