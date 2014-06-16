@@ -61,7 +61,7 @@ classdef Client < handle
             % varargin{1} = name filter
             % varargin{2} = extension filter
             
-            narginchk(1,3);
+            narginchk(1,3); % R2011b
             
             name = [];ext = [];exclude = '[]';
             
@@ -197,7 +197,7 @@ classdef Client < handle
         
         function bootstrap(this)
             % Random seed
-            rng('shuffle');
+            rng('shuffle'); % R2011b
             
             % Assert file existence and validity
             for i = 1:size(this.build,1)

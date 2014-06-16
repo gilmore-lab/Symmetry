@@ -83,7 +83,7 @@ routine = {}; % push
 for iter_index = 1:length(top_iter)
     
     % Multiple segment registration for iter_some_subvar
-    data_index1 = datasample(var_i{1},iter_some_subvar(iter_index),'Replace',false);
+    data_index1 = datasample(var_i{1},iter_some_subvar(iter_index),'Replace',false); % R2011b
     for i = 1:length(data_index1)
         inv.register(segment(data{data_index1(i)}),meta(data_index1(i)));
         routine(end+1,:) = {meta(data_index1(i)).name,meta(data_index1(i)).group,meta(data_index1(i)).image};
