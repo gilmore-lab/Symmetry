@@ -10,6 +10,7 @@ classdef Client < handle
             'input','';
             'inputtype','PGM';
             'output','';
+            'outputtype','1D';
             'io','';
             'id',datestr(now,30);
             'platform',computer;
@@ -24,8 +25,9 @@ classdef Client < handle
             'ptb';...
             'paradigm';
             };
-        writeBuffer
         threadManager
+        writeBuffer
+        writeListener
     end
     
     properties (SetObservable)
@@ -202,18 +204,31 @@ classdef Client < handle
             end
         end
         
-        function setupThreadManager(this)
+        function setUpIOThreads(this)
             this.threadManager = threadio.ProcessThreadManager;
             this.writeBuffer = threadio.WriteData;
-            this.threadManager.addProcess(this.writeBuffer);
+            this.threadManager.storeProcess(this.writeBuffer);
 %             rd = ReadData;
 %             this.threadManager.addProcess(rd);
-            addlistener(this,'out','PostSet',@this.addToBuffer);
+        end
+        
+        function setUpOutputStream(this) 
+            this.writeListener = addlistener(this,'out','PostSet',@this.addToBuffer);
+            fullpath = fullfile(this.get_defaults_value('output'),[this.get_defaults_value('id') '.' this.get_defaults_value('outputtype')]);
+            javaMethodEDT('openBufferedOutputStream',this.writeBuffer,fullpath)
+        end
+        
+        function cleanUpIO(this)
+            this.threadManager.removeAll();
+%             this.writeListener = 
+            
+%             fullpath = fullfile(this.get_defaults_value('output'),this.get_defaults_value('id'));
+%             javaMethodEDT('openBufferedOutputStream',this.writeBuffer,fullpath)
         end
         
         function addToBuffer(this,src,evt)
             if ~all(cellfun(@isempty,this.out))
-                javaMethodEDT('appendToValues',this.writeBuffer,max(cell2mat(this.out)));
+                javaMethodEDT('appendToBuffer',this.writeBuffer,max(cell2mat(this.out)));
             end
         end
         
@@ -269,7 +284,7 @@ classdef Client < handle
             % I/O
             javaaddpath(this.get_defaults_value('io'));
             import threadio.*
-            this.setupThreadManager;
+            this.setUpIOThreads;
         end
         
         function verboseDisplay(this,src,evt)

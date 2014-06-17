@@ -28,9 +28,13 @@ if client.get_defaults_value('debug')
 else
     plugin.open;
     
+    % Start of loop
+    % for iterations
+    
     [t,kill,routine] = paradigm(client,plugin);
-
     plugin.initPres;
+    KbName('UnifyKeyNames');
+    client.setUpOutputStream;
     
     % KB press
     % Trigger
@@ -42,18 +46,20 @@ else
 
     pause(1) % temp
     while strcmp('on', get(t,'Running')) % While timer is running
-
-        [keyIsDown, ~, ~] = KbCheck;
-
+        [keyIsDown, ~, keyCode] = KbCheck;
         if keyIsDown
-            kill(t)
-            break;
+            if find(keyCode)==KbName('Escape')
+                kill(t)
+                break;
+            end
         end
-
     end
 
     plugin.endPres;
     client.stopThreads;
+    % End of loop
+    
+    client.cleanUpIO;
 end
 
 disp('debug');
