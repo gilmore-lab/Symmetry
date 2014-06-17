@@ -212,9 +212,9 @@ classdef Client < handle
 %             this.threadManager.addProcess(rd);
         end
         
-        function setUpOutputStream(this) 
+        function setUpOutputStream(this,file) 
             this.writeListener = addlistener(this,'out','PostSet',@this.addToBuffer);
-            fullpath = fullfile(this.get_defaults_value('output'),[this.get_defaults_value('id') '.' this.get_defaults_value('outputtype')]);
+            fullpath = fullfile(this.get_defaults_value('output'),[file '.' this.get_defaults_value('outputtype')]);
             javaMethodEDT('openBufferedOutputStream',this.writeBuffer,fullpath)
         end
         
@@ -226,18 +226,18 @@ classdef Client < handle
 %             javaMethodEDT('openBufferedOutputStream',this.writeBuffer,fullpath)
         end
         
-        function addToBuffer(this,src,evt)
-            if ~all(cellfun(@isempty,this.out))
-                javaMethodEDT('appendToBuffer',this.writeBuffer,max(cell2mat(this.out)));
-            end
-        end
-        
         function startThreads(this)
-            javaMethodEDT('startAll',this.threadManager);
+            javaMethodEDT('startAll',this.threadManager,1000);
         end
         
         function stopThreads(this)
             javaMethodEDT('stopAll',this.threadManager);
+        end
+        
+        function addToBuffer(this,src,evt)
+            if ~all(cellfun(@isempty,this.out))
+                javaMethodEDT('appendToBuffer',this.writeBuffer,max(cell2mat(this.out)));
+            end
         end
         
         function bootstrap(this)

@@ -34,7 +34,7 @@ else
     [t,kill,routine] = paradigm(client,plugin);
     plugin.initPres;
     KbName('UnifyKeyNames');
-    client.setUpOutputStream;
+    client.setUpOutputStream(client.get_defaults_value('id')); % Temp file
     
     % KB press
     % Trigger
@@ -84,34 +84,6 @@ disp('debug');
 % params.display.fixationPointCoordinates = [ (  windowCenter - ( fixationPointRadius * pixelsPerDegree )  ) ...
 %                 (  windowCenter + ( fixationPointRadius * pixelsPerDegree )  ) ];
 
-%
-%    % Show ready screen, wait for keypress to start
-%    Screen('FillRect', windowPointer, params.display.gray);
-%    DrawFormattedText(params.display.window, 'Waiting for Scanner Operator.', 'center', 'center', params.display.black );
-%    Screen( 'Flip', params.display.window  );
-%
-%    KbStrokeWait;
-%
-%    Screen(  'FillRect', windowPointer, params.display.gray  );
-%    DrawFormattedText(params.display.window, 'Pressed!', 'center', 'center', params.display.black );
-%    Screen( 'Flip', params.display.window  );
-%
-%    % Preparing first display
-%    tex_ptr = Screen('MakeTexture', params.display.window, pres_cell{stim_ind,3});
-%    Screen('DrawTexture', params.display.window, tex_ptr);
-%    Screen( params.default.fix_type{1} , params.display.window, pres_cell{stim_ind,5}, params.display.fixationPointCoordinates );
-%
-%    WaitSecs(4.75); % Waiting 4.75 seconds
-%
-% end % End if: useMCC_Flag
-
-% start_t = GetSecs; % Start time
-% start(t);
-%
-% while strcmp('on', get(t,'Running')) % While timer is running
-%
-%     [keyIsDown, sec, keyCode] = KbCheck;
-%
 %     if keyIsDown
 %         if keyCode(escapeKey)
 %
