@@ -40,9 +40,10 @@ else
     for i = 1:exp.run
         
         setOutput(int2str(i));
-        client.startThreads;
         
         plugin.drawtxt('Preparing experiment. Please wait.');
+        client.startThreads;
+        
         if client.get_defaults_value('verbose')
             fprintf('%s...\n','Run index');
             fprintf('\t%d\n',i);
@@ -57,6 +58,8 @@ else
         plugin.drawtxt('Waiting for trigger');
         RestrictKeysForKbCheck(keys.tkey);
         KbStrokeWait;
+        
+        RestrictKeysForKbCheck([keys.esckey keys.akey]);
         
         start(t);
         
@@ -78,6 +81,7 @@ else
             break;
         end
         
+        RestrictKeysForKbCheck([]);
     end
     delete(t);
     plugin.endPres;
