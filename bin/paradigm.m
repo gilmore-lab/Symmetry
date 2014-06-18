@@ -1,24 +1,25 @@
-function [t,kill_hdl,routine,debug_exec] = paradigm(client,plugin)
+function [t,kill_hdl,setOutput_hdl,exp,routine,debug_exec] = paradigm(client,plugin)
 
-% % % UI entry 
-% % % prompt1 = {'Subject ID (YYMMDDffll):', 'Date (YYMMDD):'};
-% % % dlg_title1 = 'Fill out Subject Information';    
-% % % num_lines1 = 1;
-% % % def1 = {'', datestr(now, 'yymmdd')}; % # of Defs = # prompt fields
-% % % options.Resize = 'on';
-% % % subjout = inputdlg(prompt1, dlg_title1, num_lines1, def1, options);
-% % 
-% % % % Subject data
-% % % subj_id = subjout{1}; 
-% % % subj_date = subjout{2};
-% % % subj_str = [subj_id '_' subj_date];
-% % 
-% % % % Output setup
-% % % filename = [file_dir filesep 'data' filesep subj_str '.csv'];
-% % % fid = fopen(filename, 'a');
-% % 
-% % % Load pictures
-% % % s = segment('testname','testpath');
+% UI entry
+frame = simpleui();
+waitfor(frame,'Visible','off'); % Wait for visibility to be off
+s = getappdata(frame,'UserData'); % Get frame data
+java.lang.System.gc();
+
+if isempty(s)
+    error('scan.m (scan): User Cancelled.')
+end
+
+exp.sid = s{1};
+exp.run = s{2};
+exp.interval = s{3};
+exp.trig = s{4};
+% exp.order = cellfun(@(y)(regexprep(y,',','')),s{3},'UniformOutput',false);
+
+% ID and path set-up
+client.set_defaults_value('id',exp.sid);
+idpath = fullfile(client.get_defaults_value('output'),client.get_defaults_value('id'));
+mkdir(idpath);
 
 % Rules and logic
 % Filenames
@@ -38,7 +39,8 @@ var_1 = '01';
 var_n = unique({meta(:).group});var_n = var_n(~strcmp(var_n,var_1));
 
 % Formatting output buffer
-format_output(client,{var_1,var_n{:}},1);
+splitBy = {var_1,var_n{:}};
+setOutput_hdl = @setOutput;
 
 % Subdivisions, image index, and validation
 var_i = {}; % push
@@ -80,6 +82,9 @@ iter_some_subvar = jitterOrder;
 %
 % Pres to segments, response out to timer
 
+% Initialize window
+plugin.open;
+
 % Register
 inv = Invoke(client,plugin);
 routine = {}; % push
@@ -105,11 +110,11 @@ debug_exec = @(obj,evt)inv.execute;
 t = timer;
 set(t, 'Name', client.get_defaults_value('id'),...
     'ExecutionMode', 'fixedRate', ...
-    'Period', 1, ...
+    'Period', exp.interval, ...
     'StartFcn', @(obj,evt)inv.markonset, ...
     'TimerFcn', @(obj,evt)inv.execute, ...
-    'StopFcn', @(obj,evt)inv.stopcbk, ...
-    'TasksToExecute', size(routine,1));
+    'StopFcn', {@inv.stopcbk, exp.interval}, ...
+    'TasksToExecute', 2); % size(routine,1)
 
 %    'ErrorFcn', @err_callbck,'UserData', 1, 'StartDelay', 1);
 
@@ -118,37 +123,40 @@ set(t, 'Name', client.get_defaults_value('id'),...
         delete(t)
     end
         
-    function format_output(client,splitBy,keepInMemory)
+    function setOutput(run)
         % Format: 
-        % Output cell based on conditions, items to keep in
-        % memory before rewrite (per condition), and setting recoring
-        % callback based on paradigm
-        if any(strcmp('out',properties(client)))
-            client.out = cell([keepInMemory length(splitBy)]);
+        % Set-up output stream buffers for each conditions
+        % Set a recording callback based on paradigm
+        if any(strcmp('writeBuffer',properties(client)))
+            mkdir([idpath filesep run]);
+            for group_i = 1:length(splitBy)
+                client.setUpOutputStream([client.get_defaults_value('id') filesep run filesep splitBy{group_i}]);
+            end
+
         else
-            ME = client.missingParameter('out');
+            ME = client.missingParameter('writeBuffer');
             throw(ME);
         end
         
-        if any(strcmp('out',properties(client)))
+        if any(strcmp('header',properties(client)))
             client.header = splitBy;
         else
             ME = client.missingParameter('header');
             throw(ME);
         end
         
-        if any(strcmp('recordCb',properties(client)))
-            client.recordCb = @recordCb;
+        if any(strcmp('writeCb',properties(client)))
+            client.writeCb = @writeCb;
         else
-            ME = client.missingParameter('recordCb');
+            ME = client.missingParameter('writeCb');
             throw(ME);
         end
         
-        function recordCb(splitByString,value)
+        function writeCb(splitByString,value)
             % Add to an output buffer
-            % No writing functions
-            client.out{keepInMemory,strcmp(splitByString,client.header)} = value;
+            javaMethodEDT('appendToBuffer',client.writeBuffer{strcmp(splitByString,client.header)},value);
         end
+        
     end
 
 end

@@ -35,7 +35,7 @@ classdef Invoke < handle
             if this.debug
                 addlistener(this,'write','PostSet',@client.debugCb);
             else
-                addlistener(this,'write','PostSet',@client.record);
+                addlistener(this,'write','PostSet',@client.write);
             end
         end
         
@@ -87,79 +87,12 @@ classdef Invoke < handle
                 GetSecs-this.t0};
         end
         
-        function stopcbk(this)
-            
-%             WaitSecs(params.default.individual_duration - .04) % Manual Wait
-%             
-%             fprintf(fid, '%3.4f,', (stimonset - start_t)); % Onset (Retrospectively)
-%             
-%             Display picture
-%             [~,stimonset] = Screen('Flip', params.display.window);
-%             set(t,'UserData',stimonset); % Set UserData
-%             
-%             Writing data (Retrospectively)
-%             fprintf(fid, '%1.f,', pres_cell{stim_ind-1,1}); % Block number
-%             fprintf(fid, '%s,', pres_cell{stim_ind-1,2}); % Pattern type
-%             fprintf(fid, '%1.f,', pres_cell{(stim_ind-1),4}); % Fixation change
-%             fprintf(fid, '%3.4f,', RT); % RT
-%             fprintf(fid, '%1.f,', Hit); % Hit
-%             
-%             if pres_cell{(stim_ind-1), 4} && Hit == 0 % If last was a fixation change, and no Hit was reported
-%                 Miss = 1; % Miss is 1
-%             end % End if: fix_change(get(t, 'TasksExecuted'))
-%             
-%             fprintf(fid, '%1.f\n', Miss); % Miss
-%             
-%             Resetting
-%             RT = 0;
-%             Hit = 0;
-%             Miss = 0;
-%             
-%             WaitSecs(params.default.individual_duration - .04); % Manual wait
-%             
-%             Final data write (Retrospectively)
-%             fprintf(fid, '%3.4f,', (stimonset - start_t)); % Onset
-%             fprintf(fid, '%1.f,', pres_cell{stim_ind,1}); % Block number
-%             fprintf(fid, '%s,', pres_cell{stim_ind,2}); % Pattern type
-%             fprintf(fid, '%1.f,', pres_cell{(stim_ind-1),4}); % Fixation change
-%             fprintf(fid, '%3.4f,', RT); % RT
-%             fprintf(fid, '%1.f,', Hit); % Hit
-%             
-%             if pres_cell{(stim_ind-1), 4} && Hit == 0 % If last was a fixation change, and no Hit was reported
-%                 Miss = 1; % Miss is 1
-%             end % End if: fix_change(get(t, 'TasksExecuted'))
-%             
-%             fprintf(fid, '%1.f\n', Miss); % Miss
-%             
-        end % End stop_callbck(~, ~, fid)
+        function stopcbk(this,src,evt,per)
+            pause(per);
+            this.plugin.drawblank;
+            this.iter = 1;
+        end
         
-        %     function err_callbck(~,~)
-        %
-        %         %disp(event.Data.Message)
-        %         stop(t)
-        %
-        %         % Close all screens
-        %         Screen('CloseAll');
-        %
-        %         % Restores the mouse cursor.
-        %         ShowCursor;
-        %         ListenChar(0);
-        %
-        %         % Restore preferences
-        %         Screen('Preference', 'VisualDebugLevel', oldVisualDebugLevel);
-        %         Screen('Preference', 'SuppressAllWarnings', oldSupressAllWarnings);
-        %
-        %         if( useMCC_Flag )
-        %             if ispc
-        %                 stop( MCC_dio );
-        %                 delete( MCC_dio )
-        %                 clear MCC_dio
-        %             end
-        %         end % END - if( useMCC_Flag )
-        %
-        %         fclose('all');
-        %
-        %     end % End err_callbck(~,~)
     end
     
 end

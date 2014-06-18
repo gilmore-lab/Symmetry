@@ -12,32 +12,30 @@ classdef Client < handle
             'output','';
             'outputtype','1D';
             'io','';
-            'id',datestr(now,30);
+            'writeinterval',60000;
+            'staggerinterval',500;
+            'id','';
             'platform',computer;
             'matlab',version;
             'ptb','';
             'java',version('-java');
             };
         build = {
-            'invoke';...
+            'Invoke';...
             'presentation';...
             'segment';...
-            'ptb';...
+            'PTB';...
             'paradigm';
+            'simpleui';
             };
         threadManager
-        writeBuffer
-        writeListener
     end
-    
-    properties (SetObservable)
-        out
-    end
-    
+        
     properties
         data
         header
-        recordCb
+        writeBuffer = {}
+        writeCb
     end
     
     methods (Static)
@@ -157,6 +155,60 @@ classdef Client < handle
             end
         end
         
+        function bootstrap(this)
+            % Random seed
+            rng('shuffle'); % R2011b
+            
+            % Assert file existence and validity
+            for i = 1:size(this.build,1)
+                if isempty(which(this.build{i}))
+                    ME = this.missingFile(this.build{i});
+                    throw(ME);
+                end
+                if ~regexp(which(this.build{i}),regexprep(this.defaults{3,2},'\','\\\'))
+                    ME = this.incorrectFileReference(which(this.build{i}));
+                    throw(ME);
+                end
+            end
+            
+            % Path construction
+            if isempty(this.get_defaults_value('path'))
+                ME = this.missingParameter(this.get_defaults_value('path'));
+                throw(ME);
+            end
+                
+            fullpath = fullfile(this.get_defaults_value('path'),this.get_defaults_value('input'));
+            this.set_defaults_value('input',fullpath);
+            fullpath = fullfile(this.get_defaults_value('path'),this.get_defaults_value('output'));
+            this.set_defaults_value('output',fullpath);
+            fullpath = fullfile(this.get_defaults_value('path'),this.get_defaults_value('io'));
+            this.set_defaults_value('io',fullpath);
+            if this.get_defaults_value('verbose')
+                fprintf('%s...\n','input path');
+                fprintf('\t%s\n',this.get_defaults_value('input'));
+                fprintf('%s...\n','output path');
+                fprintf('\t%s\n',this.get_defaults_value('output'));
+                fprintf('%s...\n','io path');
+                fprintf('\t%s\n',this.get_defaults_value('io'));
+            end
+            
+            % Media
+            images = this.get_image_names;
+            [this.data,~] = this.load_image_matrix(images);
+            
+            % I/O
+            javaaddpath(this.get_defaults_value('io'));
+            import threadio.*
+            
+            if this.get_defaults_value('verbose')
+                fprintf('%s...\n','Added IO path');
+                fprintf('\t%s\n',this.get_defaults_value('io'));
+                fprintf('%s...\n','Imported "threadio" package');
+            end
+            
+            this.setUpIOThreads;
+        end
+        
         function value = get_defaults_value(this,key)
             % Return by key
             value = this.defaults{strcmp(this.defaults(:,1),key),2};
@@ -203,88 +255,43 @@ classdef Client < handle
                 fprintf('\t%d\n',n);
             end
         end
-        
+                
         function setUpIOThreads(this)
             this.threadManager = threadio.ProcessThreadManager;
-            this.writeBuffer = threadio.WriteData;
-            this.threadManager.storeProcess(this.writeBuffer);
 %             rd = ReadData;
 %             this.threadManager.addProcess(rd);
-        end
-        
-        function setUpOutputStream(this,file) 
-            this.writeListener = addlistener(this,'out','PostSet',@this.addToBuffer);
-            fullpath = fullfile(this.get_defaults_value('output'),[file '.' this.get_defaults_value('outputtype')]);
-            javaMethodEDT('openBufferedOutputStream',this.writeBuffer,fullpath)
+            if this.get_defaults_value('verbose')
+                fprintf('%s...\n','Initialized ProcessThreadManager');
+            end
         end
         
         function cleanUpIO(this)
+            this.writeBuffer = {};
             this.threadManager.removeAll();
-%             this.writeListener = 
-            
-%             fullpath = fullfile(this.get_defaults_value('output'),this.get_defaults_value('id'));
-%             javaMethodEDT('openBufferedOutputStream',this.writeBuffer,fullpath)
+            if this.get_defaults_value('verbose')
+                fprintf('%s...\n','Threads cleaned');
+            end
+        end
+        
+        function setUpOutputStream(this,file)
+            this.writeBuffer(end+1) = {threadio.WriteData(this.get_defaults_value('writeinterval'))};
+            this.threadManager.storeProcess(this.writeBuffer{end});
+            fullpath = fullfile(this.get_defaults_value('output'),[file '.' this.get_defaults_value('outputtype')]);
+            javaMethodEDT('openBufferedOutputStream',this.writeBuffer{end},fullpath)
+            if this.get_defaults_value('verbose')
+                fprintf('%s...\n','Added write buffer to index');
+                fprintf('\t%d\n',length(this.writeBuffer));
+                fprintf('%s...\n','Opened data stream for file');
+                fprintf('\t%s\n',fullpath);
+            end
         end
         
         function startThreads(this)
-            javaMethodEDT('startAll',this.threadManager,1000);
+            javaMethodEDT('startAll',this.threadManager,this.get_defaults_value('staggerinterval'));
         end
         
         function stopThreads(this)
             javaMethodEDT('stopAll',this.threadManager);
-        end
-        
-        function addToBuffer(this,src,evt)
-            if ~all(cellfun(@isempty,this.out))
-                javaMethodEDT('appendToBuffer',this.writeBuffer,max(cell2mat(this.out)));
-            end
-        end
-        
-        function bootstrap(this)
-            % Random seed
-            rng('shuffle'); % R2011b
-            
-            % Assert file existence and validity
-            for i = 1:size(this.build,1)
-                if isempty(which(this.build{i}))
-                    ME = this.missingFile(this.build{i});
-                    throw(ME);
-                end
-                if ~regexp(which(this.build{i}),regexprep(this.defaults{3,2},'\','\\\'))
-                    ME = this.incorrectFileReference(which(this.build{i}));
-                    throw(ME);
-                end
-            end
-            
-            % Path construction
-            if isempty(this.get_defaults_value('path'))
-                ME = this.missingParameter(this.get_defaults_value('path'));
-                throw(ME);
-            end
-                
-            fullpath = fullfile(this.get_defaults_value('path'),this.get_defaults_value('input'));
-            this.set_defaults_value('input',fullpath);
-            fullpath = fullfile(this.get_defaults_value('path'),this.get_defaults_value('output'));
-            this.set_defaults_value('output',fullpath);
-            fullpath = fullfile(this.get_defaults_value('path'),this.get_defaults_value('io'));
-            this.set_defaults_value('io',fullpath);
-            if this.get_defaults_value('verbose')
-                fprintf('%s...\n','input path');
-                fprintf('\t%s\n',this.get_defaults_value('input'));
-                fprintf('%s...\n','output path');
-                fprintf('\t%s\n',this.get_defaults_value('output'));
-                fprintf('%s...\n','io path');
-                fprintf('\t%s\n',this.get_defaults_value('io'));
-            end
-            
-            % Media
-            images = this.get_image_names;
-            [this.data,~] = this.load_image_matrix(images);
-            
-            % I/O
-            javaaddpath(this.get_defaults_value('io'));
-            import threadio.*
-            this.setUpIOThreads;
         end
         
         function verboseDisplay(this,src,evt)
@@ -295,12 +302,24 @@ classdef Client < handle
             end
         end
         
-        function record(this,src,evt)
-            this.recordCb(evt.AffectedObject.write{1},evt.AffectedObject.write{2});
+        function write(this,src,evt)
+            if this.get_defaults_value('verbose')
+                fprintf('%s...\n','Client callback, group');
+                fprintf('\t%s\n',evt.AffectedObject.write{1});
+                fprintf('%s...\n','Client callback, time');
+                fprintf('\t%d\n',evt.AffectedObject.write{2});
+            end
+            this.writeCb(evt.AffectedObject.write{1},evt.AffectedObject.write{2});
         end
         
         function debugCb(this,src,evt)
-            this.recordCb(evt.AffectedObject.write{2},evt.AffectedObject.write{4});
+            if this.get_defaults_value('verbose')
+                fprintf('%s...\n','Debug callback, group');
+                fprintf('\t%s\n',evt.AffectedObject.write{2});
+                fprintf('%s...\n','Debug callback, time');
+                fprintf('\t%d\n',evt.AffectedObject.write{4});
+            end
+            this.writeCb(evt.AffectedObject.write{2},evt.AffectedObject.write{4});
         end
     end
 end

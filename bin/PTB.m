@@ -134,11 +134,7 @@ classdef PTB < handle
             this.autoclosetex = ~this.autoclosetex;
             result = this.autoclosetex;
         end
-        
-        function settxt(this,txt)
-            DrawFormattedText(this.w,txt,'center','center',this.black);
-        end
-        
+
         function setdebugtxt(this)
             DrawFormattedText(this.w,['Debug\n' this.debugmsg],'center',[],[255 0 0]);
         end
@@ -150,16 +146,24 @@ classdef PTB < handle
         function open(this)
             [this.w, this.rect] = Screen('OpenWindow', this.whichScreen, this.gray); % Open Screen
             if this.debug
-                this.debugmsg = 'ptb.open';
+                this.debugmsg = 'PTB.open';
             end
             
+            this.flip;
+        end
+                
+        function drawtxt(this,txt)
+            if this.debug
+                this.debugmsg = 'PTB.drawtxt';
+            end
+            DrawFormattedText(this.w,txt,'center','center',this.black);
             this.flip;
         end
         
         function drawblank(this)
             Screen('FillRect',this.w,this.gray);
             if this.debug
-                this.debugmsg = 'ptb.drawblank';
+                this.debugmsg = 'PTB.drawblank';
             end
             
             this.flip;
@@ -169,7 +173,7 @@ classdef PTB < handle
             this.tex = Screen('MakeTexture',this.w,img);
             Screen('DrawTexture',this.w,this.tex);
             if this.debug
-                this.debugmsg = 'ptb.drawimg';
+                this.debugmsg = 'PTB.drawimg';
             end
             
             [secs] = this.flip;

@@ -21,49 +21,68 @@ client.bootstrap;
 
 % plugin = PTB(client.get_defaults_value('debug'),client.get_defaults_value('verbose'));
 plugin = PTB(~client.get_defaults_value('debug'),client.get_defaults_value('verbose'));
-
+KbName('UnifyKeyNames');
+        
 if client.get_defaults_value('debug')
-    [~,~,~,debug_exec] = paradigm(client,plugin);
-    debug_exec();
-else
-    plugin.open;
-    
-    % Start of loop
-    % for iterations
-    
-    [t,kill,routine] = paradigm(client,plugin);
-    plugin.initPres;
-    KbName('UnifyKeyNames');
-    client.setUpOutputStream(client.get_defaults_value('id')); % Temp file
-    
-    % KB press
-    % Trigger
-    % GetSecs;
-    KbStrokeWait;
-    
+    [~,~,~,~,debug_exec] = paradigm(client,plugin);
     client.startThreads;
-    start(t);
-
-    pause(1) % temp
-    while strcmp('on', get(t,'Running')) % While timer is running
-        [keyIsDown, ~, keyCode] = KbCheck;
-        if keyIsDown
-            if find(keyCode)==KbName('Escape')
-                kill(t)
-                break;
+    debug_exec();
+    client.stopThreads;
+    client.cleanUpIO;
+else
+    
+    [t,kill,setOutput,exp,routine] = paradigm(client,plugin);
+    abort = 0;
+    keys = plugin.keyGet;
+    plugin.initPres;
+    
+    % Loop runs
+    for i = 1:exp.run
+        
+        setOutput(int2str(i));
+        client.startThreads;
+        
+        plugin.drawtxt('Preparing experiment. Please wait.');
+        if client.get_defaults_value('verbose')
+            fprintf('%s...\n','Run index');
+            fprintf('\t%d\n',i);
+            fprintf('%s.\n','Ready');
+        end
+        
+        % Experimenter press
+        plugin.drawtxt('Experimenter press spacebar.');
+        RestrictKeysForKbCheck(keys.spacekey);
+        KbStrokeWait;
+        % Trigger
+        plugin.drawtxt('Waiting for trigger');
+        RestrictKeysForKbCheck(keys.tkey);
+        KbStrokeWait;
+        
+        start(t);
+        
+        while strcmp('on', get(t,'Running')) % While timer is running
+            [keyIsDown, ~, keyCode] = KbCheck;
+            if keyIsDown
+                if find(keyCode)==keys.esckey
+                    kill(t);
+                    abort = 1;
+                    break;
+                end
             end
         end
+        
+        client.stopThreads;
+        client.cleanUpIO;
+        
+        if abort
+            break;
+        end
+        
     end
-
+    delete(t);
     plugin.endPres;
-    client.stopThreads;
-    % End of loop
-    
-    client.cleanUpIO;
 end
 
-disp('debug');
-    
 % % Initializing
 % stimonset = [];
 
