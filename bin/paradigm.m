@@ -1,25 +1,32 @@
-function [t,kill_hdl,setOutput_hdl,exp,routine,debug_exec] = paradigm(client,plugin)
+function [t,kill_hdl,setOutput_hdl,exp,registerRoutine_hdl,debug_exec] = paradigm(client,plugin)
 
-% UI entry
-frame = simpleui();
-waitfor(frame,'Visible','off'); % Wait for visibility to be off
-s = getappdata(frame,'UserData'); % Get frame data
-java.lang.System.gc();
-
-if isempty(s)
-    error('scan.m (scan): User Cancelled.')
+if ~client.get_defaults_value('debug')
+    % UI entry
+    frame = simpleui();
+    waitfor(frame,'Visible','off'); % Wait for visibility to be off
+    s = getappdata(frame,'UserData'); % Get frame data
+    java.lang.System.gc();
+    
+    if isempty(s)
+        error('scan.m (scan): User Cancelled.')
+    end
+    
+    exp.sid = s{1};
+    exp.run = s{2};
+    exp.interval = s{3};
+    exp.trig = s{4};
+    % exp.order = cellfun(@(y)(regexprep(y,',','')),s{3},'UniformOutput',false);
+    
+    % ID and path set-up
+    client.set_defaults_value('id',exp.sid);
+    idpath = fullfile(client.get_defaults_value('output'),client.get_defaults_value('id'));
+    mkdir(idpath);
+else
+    client.set_defaults_value('id',['debug_' datestr(now,30)]);
+    idpath = fullfile(client.get_defaults_value('output'),client.get_defaults_value('id'));
+    mkdir(idpath);
+    exp.interval = 1.2;
 end
-
-exp.sid = s{1};
-exp.run = s{2};
-exp.interval = s{3};
-exp.trig = s{4};
-% exp.order = cellfun(@(y)(regexprep(y,',','')),s{3},'UniformOutput',false);
-
-% ID and path set-up
-client.set_defaults_value('id',exp.sid);
-idpath = fullfile(client.get_defaults_value('output'),client.get_defaults_value('id'));
-mkdir(idpath);
 
 % Rules and logic
 % Filenames
@@ -31,9 +38,21 @@ meta = cellfun(re,img_names);
 data = client.data;
 
 % Metadata mapping
+group_naming = {'01','p1','intact';...
+    '02','p2','intact';...
+    '03','pm','intact';...
+    '04','pg','intact';...
+    '06','pmm','intact';...
+    '19','p2','scrambled';...
+    '20','pm','scrambled';...
+    '21','pg','scrambled';...
+    '23','pmm','scrambled';};
+
 for i = 1:files_n
     [~,name] = fileparts(img_names{i});
     meta(i).name = name;
+    meta(i).cname = group_naming{strcmp(meta(i).group,group_naming(:,1)),2};
+    meta(i).phase = group_naming{strcmp(meta(i).group,group_naming(:,1)),3};
 end
 var_1 = '01';
 var_n = unique({meta(:).group});var_n = var_n(~strcmp(var_n,var_1));
@@ -44,13 +63,9 @@ setOutput_hdl = @setOutput;
 
 % Subdivisions, image index, and validation
 var_i = {}; % push
-random_within_var = true; % Missing business rule, assuming random
 for i = 0:size(var_n,2)
     if i
         var_i{end+1} = find(strcmp(var_n{i},{meta(:).group}));
-        if random_within_var
-            var_i{end} = Shuffle(var_i{end});
-        end
     else
         var_i{end+1} = find(strcmp(var_1,{meta(:).group}));
     end
@@ -59,16 +74,11 @@ end
 set_n = unique(cellfun(@length,var_i));
 assert(length(set_n)==1,'Inconsistent image sets found!')
 
-% "Optseq" e-mail, Peter Jes Kohler, pjkohler@stanford.edu
-% Deprecate in future release
-tempIdx1 = repmat(2:length(var_n)+1,set_n);
-condOrder = tempIdx1(randperm(length(tempIdx1)));
-tempIdx2 =  repmat(2:4,1,27);
-jitterOrder = tempIdx2(randperm(length(tempIdx2)));
-jitterOrder = jitterOrder(logical(condOrder)); % Idempotent
-top_iter = condOrder;
-iter_some_subvar = jitterOrder;
-% Deprecate in future release
+% Split into 2 conditions (1:1 relationship), name
+group_div = 2;
+grouping1 = var_n(1:length(var_n)/group_div);
+grouping2 = var_n((1+length(var_n)/group_div):length(var_n));
+assert(length(grouping1) == length(grouping2),'Inconsistent image groupings between "scrambled" and "intact" found!')
 
 % Timing
 
@@ -82,27 +92,31 @@ iter_some_subvar = jitterOrder;
 %
 % Pres to segments, response out to timer
 
-% Initialize window
-plugin.open;
-
-% Register
-inv = Invoke(client,plugin);
-routine = {}; % push
-for iter_index = 1:length(top_iter)
-    
-    % Multiple segment registration for iter_some_subvar
-    data_index1 = datasample(var_i{1},iter_some_subvar(iter_index),'Replace',false); % R2011b
-    for i = 1:length(data_index1)
-        inv.register(segment(data{data_index1(i)}),meta(data_index1(i)));
-        routine(end+1,:) = {meta(data_index1(i)).name,meta(data_index1(i)).group,meta(data_index1(i)).image};
-        % Keep data structure
-    end
-    % Individual segment registration for top_iter
-    data_index2 = var_i{top_iter(iter_index)}(1);
-    var_i{top_iter(iter_index)}(1) = []; % pop
-    inv.register(segment(data{data_index2}),meta(data_index2));
-    routine(end+1,:) = {meta(data_index2).name,meta(data_index2).group,meta(data_index2).image};
+if ~client.get_defaults_value('debug')
+    % Initialize window
+    plugin.open;
 end
+
+inv = Invoke(client,plugin);
+registerRoutine_hdl = @registerRoutine;
+
+% % Register
+% routine = {}; % push
+% for iter_index = 1:length(top_iter)
+%     
+%     % Multiple segment registration for iter_some_subvar
+%     data_index1 = datasample(var_i{1},iter_some_subvar(iter_index),'Replace',false); % R2011b
+%     for i = 1:length(data_index1)
+%         inv.register(segment(data{data_index1(i)}),meta(data_index1(i)));
+%         routine(end+1,:) = {meta(data_index1(i)).name,meta(data_index1(i)).group,meta(data_index1(i)).image};
+%         % Keep data structure
+%     end
+%     % Individual segment registration for top_iter
+%     data_index2 = var_i{top_iter(iter_index)}(1);
+%     var_i{top_iter(iter_index)}(1) = []; % pop
+%     inv.register(segment(data{data_index2}),meta(data_index2));
+%     routine(end+1,:) = {meta(data_index2).name,meta(data_index2).group,meta(data_index2).image};
+% end
 
 kill_hdl = @kill;
 debug_exec = @(obj,evt)inv.execute;
@@ -113,8 +127,7 @@ set(t, 'Name', client.get_defaults_value('id'),...
     'Period', exp.interval, ...
     'StartFcn', @(obj,evt)inv.markonset, ...
     'TimerFcn', @(obj,evt)inv.execute, ...
-    'StopFcn', {@inv.stopcbk, exp.interval}, ...
-    'TasksToExecute', size(routine,1));
+    'StopFcn', {@inv.stopcbk, exp.interval});
 
 %    'ErrorFcn', @err_callbck,'UserData', 1, 'StartDelay', 1);
 
@@ -122,7 +135,58 @@ set(t, 'Name', client.get_defaults_value('id'),...
         stop(t)
         delete(t)
     end
+
+    function [routine] = registerRoutine()
         
+        % "Optseq" e-mail, Peter Jes Kohler, pjkohler@stanford.edu
+        % Deprecate in future release
+        tempIdx1 = repmat(1:length(grouping1),set_n);
+        condOrder = tempIdx1(randperm(length(tempIdx1)));
+        reps = 1:3;
+        tempIdx2 = repmat(reps,1,round(length(condOrder)/(length(reps))));
+        jitterOrder = tempIdx2(randperm(length(tempIdx2)));
+        jitterOrder = jitterOrder(logical(condOrder)); % Idempotent
+        % Deprecate in future release
+        
+        top_iter = condOrder; % Grouping 1
+        iter_some_subvar = jitterOrder;
+
+        inv.reset();
+        routine = {}; % push
+
+        random_within_var = true; % Missing business rule, assuming random
+        if random_within_var
+            index = cellfun(@(y)(Shuffle(y)),var_i,'UniformOutput',false);
+        else
+            index = var_i;
+        end
+        
+        for iter_index = 1:length(top_iter)
+            
+            % Multiple segment registration for iter_some_subvar
+            data_index1 = datasample(index{1},iter_some_subvar(iter_index),'Replace',false); % R2011b
+            for i = 1:length(data_index1)
+                inv.register(segment(data{data_index1(i)}),meta(data_index1(i)));
+                routine(end+1,:) = {meta(data_index1(i)).cname,meta(data_index1(i)).image,meta(data_index1(i)).name,meta(data_index1(i)).phase};
+                % Keep data structure
+            end
+            % Individual segment registration for top_iter, grouping2 +
+            % grouping1
+            data_index2 = index{top_iter(iter_index)+1}(1);
+            data_index3 = index{top_iter(iter_index)+1+(length(var_n)/group_div)}(1);
+            index{top_iter(iter_index)+1}(1) = []; % pop
+            index{top_iter(iter_index)+1+(length(var_n)/group_div)}(1); % pop
+            % grouping2
+            inv.register(segment(data{data_index3}),meta(data_index3));
+            routine(end+1,:) = {meta(data_index3).cname,meta(data_index3).image,meta(data_index3).name,meta(data_index3).phase};
+            % grouping1
+            inv.register(segment(data{data_index2}),meta(data_index2));
+            routine(end+1,:) = {meta(data_index2).cname,meta(data_index2).image,meta(data_index2).name,meta(data_index2).phase};
+        end
+        
+        set(t,'TasksToExecute', size(routine,1));
+    end
+
     function setOutput(run)
         % Format: 
         % Set-up output stream buffers for each conditions
@@ -130,7 +194,7 @@ set(t, 'Name', client.get_defaults_value('id'),...
         if any(strcmp('writeBuffer',properties(client)))
             mkdir([idpath filesep run]);
             for group_i = 1:length(splitBy)
-                client.setUpOutputStream([client.get_defaults_value('id') filesep run filesep splitBy{group_i}]);
+                client.setUpOutputStream([client.get_defaults_value('id') filesep run filesep splitBy{group_i} '_' group_naming{strcmp(splitBy{group_i},group_naming(:,1)),2}]);
             end
 
         else
@@ -138,10 +202,10 @@ set(t, 'Name', client.get_defaults_value('id'),...
             throw(ME);
         end
         
-        if any(strcmp('header',properties(client)))
-            client.header = splitBy;
+        if any(strcmp('groups',properties(client)))
+            client.groups = splitBy;
         else
-            ME = client.missingParameter('header');
+            ME = client.missingParameter('groups');
             throw(ME);
         end
         
@@ -154,7 +218,7 @@ set(t, 'Name', client.get_defaults_value('id'),...
         
         function writeCb(splitByString,value)
             % Add to an output buffer
-            javaMethodEDT('appendToBuffer',client.writeBuffer{strcmp(splitByString,client.header)},value);
+            javaMethodEDT('appendToBuffer',client.writeBuffer{strcmp(splitByString,client.groups)},value);
         end
         
     end

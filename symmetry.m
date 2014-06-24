@@ -24,21 +24,26 @@ plugin = PTB(~client.get_defaults_value('debug'),client.get_defaults_value('verb
 KbName('UnifyKeyNames');
         
 if client.get_defaults_value('debug')
-    [~,~,~,~,debug_exec] = paradigm(client,plugin);
+    [~,~,setOutput,~,registerRoutine,debug_exec] = paradigm(client,plugin);
+    routine = registerRoutine();
+    setOutput(int2str(1));
+    
     client.startThreads;
     debug_exec();
     client.stopThreads;
     client.cleanUpIO;
 else
     
-    [t,kill,setOutput,exp,routine] = paradigm(client,plugin);
+    [t,kill,setOutput,exp,registerRoutine] = paradigm(client,plugin);
     abort = 0;
     keys = plugin.keyGet;
     plugin.initPres;
     
+    routine = cell([1 exp.run]);
     % Loop runs
     for i = 1:exp.run
         
+        routine{i} = registerRoutine();
         setOutput(int2str(i));
         
         plugin.drawtxt('Preparing experiment. Please wait.');

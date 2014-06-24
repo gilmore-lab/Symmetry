@@ -33,7 +33,7 @@ classdef Client < handle
         
     properties
         data
-        header
+        groups
         writeBuffer = {}
         writeCb
     end

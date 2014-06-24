@@ -10,6 +10,7 @@ classdef Invoke < handle
     properties
         debug
         plugin
+        listeners = cell(0);
         sequence = cell(0);
         meta = cell(0);
         iter = 1;
@@ -41,9 +42,21 @@ classdef Invoke < handle
         
         function listenTo(this,segment)
             if this.debug
-                addlistener(segment,'go',@this.debugRespond);
+                this.listeners{end+1} = addlistener(segment,'go',@this.debugRespond);
             else
-                addlistener(segment,'go',@this.respond);
+                this.listeners{end+1} = addlistener(segment,'go',@this.respond);
+            end
+        end
+        
+        function reset(this)
+            this.listeners = cell(0);
+            this.sequence = cell(0);
+            this.meta = cell(0);
+            this.iter = 1;
+            if this.debug
+                this.t0 = GetSecs;
+            else
+                this.t0 = NaN;
             end
         end
         
@@ -70,8 +83,8 @@ classdef Invoke < handle
         function respond(this,src,evt)
 %             On-screen verbosity
             msg = sprintf('%s: %s\n%s: %s\n%s: %s\n', ...
-                'Name',this.meta{this.iter}.name, ...
-                'Group',this.meta{this.iter}.group, ...
+                'Name',this.meta{this.iter}.cname, ...
+                'Phase',this.meta{this.iter}.phase, ...
                 'Image',this.meta{this.iter}.image);
             this.plugin.setVerboseMsg(msg);
             secs = this.plugin.drawimg(src.IMAGE);
