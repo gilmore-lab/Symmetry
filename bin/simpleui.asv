@@ -13,7 +13,7 @@ import java.awt.*
 frame = JFrame('Experiment Info');
 callback4 = @(obj,evt)onClose(obj,evt); % Callback for close button
 set(frame,'WindowClosingCallback',callback4);
-frame.setSize(400,350);
+frame.setSize(400,300);
 toolkit = Toolkit.getDefaultToolkit();
 screenSize = toolkit.getScreenSize();
 x = (screenSize.width - frame.getWidth()) / 2;
@@ -29,20 +29,20 @@ tf1Panel.add(tf1);
 % Set-up runs entry
 tf2Panel = JPanel(GridLayout(1,1));
 tf2Panel.setBorder(BorderFactory.createTitledBorder('Number of runs'));
-tf2 = JTextField(int2str(1));
+tf2 = JTextField(1);
 tf2Panel.add(tf2);
 
 % Set-up interval entry
 tf3Panel = JPanel(GridLayout(1,1));
 tf3Panel.setBorder(BorderFactory.createTitledBorder('Presentation Interval'));
-tf3 = JTextField(num2str(1.2));
+tf3 = JTextField(1);
 tf3Panel.add(tf3);
 
 % Set-up TR entry
-tf4Panel = JPanel(GridLayout(1,1));
-tf4Panel.setBorder(BorderFactory.createTitledBorder('TR'));
-tf4 = JTextField(int2str(2));
-tf4Panel.add(tf4);
+tf3Panel = JPanel(GridLayout(1,1));
+tf3Panel.setBorder(BorderFactory.createTitledBorder('Presentation Interval'));
+tf3 = JTextField(3);
+tf3Panel.add(tf3);
 
 % Set-up trigger radio buttons
 rb1Panel = JPanel(GridLayout(2,1));
@@ -59,13 +59,12 @@ rb1Panel.add(yes1);
 rb1Panel.add(no1);
 
 % Set-up left pane
-left = JPanel(GridLayout(5,1));
-left.setMinimumSize(Dimension(150,275));
-left.setPreferredSize(Dimension(150,275));
+left = JPanel(GridLayout(4,1));
+left.setMinimumSize(Dimension(150,225));
+left.setPreferredSize(Dimension(150,225));
 left.add(tf1Panel);
 left.add(tf2Panel);
 left.add(tf3Panel);
-left.add(tf4Panel);
 left.add(rb1Panel);
 
 % % Set-up first right panel
@@ -170,7 +169,6 @@ frame.setVisible(1);
         sid = tf1.getText();
         run = tf2.getText();
         interval = tf3.getText();
-        tr = tf4.getText();
         selectedModel1 = group1.getSelection();
         trig = selectedModel1.getActionCommand();
 %         listout = cell(listArray);
@@ -184,11 +182,7 @@ frame.setVisible(1);
         elseif isempty(char(interval)) % Check for empty SID
             javax.swing.JOptionPane.showMessageDialog(frame,'Interval is empty!','Interval check',javax.swing.JOptionPane.INFORMATION_MESSAGE);
         elseif isnan(str2double(char(interval)))
-            javax.swing.JOptionPane.showMessageDialog(frame,'Invalid interval entry!','Interval check',javax.swing.JOptionPane.INFORMATION_MESSAGE);
-        elseif isempty(char(tr)) % Check for empty SID
-            javax.swing.JOptionPane.showMessageDialog(frame,'TR is empty!','TR check',javax.swing.JOptionPane.INFORMATION_MESSAGE);
-        elseif isnan(str2double(char(tr)))
-            javax.swing.JOptionPane.showMessageDialog(frame,'Invalid TR entry!','TR check',javax.swing.JOptionPane.INFORMATION_MESSAGE);
+            javax.swing.JOptionPane.showMessageDialog(frame,'Invalid interval entry!','Number of runs check',javax.swing.JOptionPane.INFORMATION_MESSAGE);
 %         elseif any(cellfun(@isempty,listout)) % Check for empty entries in order list
 %             javax.swing.JOptionPane.showMessageDialog(frame,'There are unused orders!','Order list check',javax.swing.JOptionPane.INFORMATION_MESSAGE);
         else
@@ -203,7 +197,6 @@ frame.setVisible(1);
                 '\nNumber of runs: ' char(run) ...
                 '\nInterval: ' char(interval) ...
                 '\nTrigger: ' char(trig) ...
-                '\nTR: ' char(tr) ...
                 '\n\nIs this correct?']);
 %                 '\nOrder: \n' s(1:end-2) ...
             result = javax.swing.JOptionPane.showConfirmDialog(frame,infostring,'Confirm parameters',javax.swing.JOptionPane.YES_NO_OPTION);
@@ -211,7 +204,6 @@ frame.setVisible(1);
             % Record data and close
             run = str2double(char(run));
             interval = str2double(char(interval));
-            tr = str2double(char(tr));
             if result==javax.swing.JOptionPane.YES_OPTION
                 switch char(trig)
                     case 'Yes'
@@ -219,7 +211,7 @@ frame.setVisible(1);
                     case 'No'
                         trig = 0;
                 end
-                setappdata(frame,'UserData',{char(sid),run,interval,tr,trig});
+                setappdata(frame,'UserData',{char(sid),run,interval,trig});
                 frame.dispose();
             else
             end

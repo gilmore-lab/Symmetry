@@ -60,9 +60,19 @@ else
         RestrictKeysForKbCheck(keys.spacekey);
         KbStrokeWait;
         % Trigger
-        plugin.drawtxt('Waiting for trigger');
-        RestrictKeysForKbCheck(keys.tkey);
-        KbStrokeWait;
+        if exp.trig
+            plugin.drawtxt('Waiting for trigger');
+            RestrictKeysForKbCheck(keys.tkey);
+            KbStrokeWait;
+        else
+            plugin.drawtxt('Waiting for start');
+            RestrictKeysForKbCheck(keys.spacekey);
+            KbStrokeWait;
+            plugin.drawtxt('Waiting for start.');
+            % # of dummy scans = 1 + quotient[ 3/TR(in seconds) ] if no iPAT.
+            % TR * (1 + floor(3/TR)) + .75 % (s)
+%             WaitSecs(
+        end
         
         RestrictKeysForKbCheck([keys.esckey keys.akey]);
         

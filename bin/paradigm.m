@@ -14,7 +14,8 @@ if ~client.get_defaults_value('debug')
     exp.sid = s{1};
     exp.run = s{2};
     exp.interval = s{3};
-    exp.trig = s{4};
+    exp.tr = s{4};
+    exp.trig = s{5};
     % exp.order = cellfun(@(y)(regexprep(y,',','')),s{3},'UniformOutput',false);
     
     % ID and path set-up
