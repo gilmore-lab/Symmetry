@@ -26,6 +26,7 @@ KbName('UnifyKeyNames');
 if client.get_defaults_value('debug')
     [~,~,setOutput,~,registerRoutine,debug_exec] = paradigm(client,plugin);
     routine = registerRoutine();
+    routine = [routine, cell([size(routine,1) 1])];
     setOutput(int2str(1));
     
     client.startThreads;
@@ -43,7 +44,8 @@ else
     % Loop runs
     for i = 1:exp.run
         
-        routine{i} = registerRoutine();
+        tmp = registerRoutine();
+        routine{i} = [tmp, cell([size(tmp,1) 1])];
         setOutput(int2str(i));
         
         plugin.drawtxt('Preparing experiment. Please wait.');
@@ -70,8 +72,8 @@ else
             KbStrokeWait;
             plugin.drawtxt('Waiting for start.');
             % # of dummy scans = 1 + quotient[ 3/TR(in seconds) ] if no iPAT.
-            % TR * (1 + floor(3/TR)) + .75 % (s)
-%             WaitSecs(
+            disDaq = exp.tr * (1 + floor(3/exp.tr)) + .75; % (s)
+            WaitSecs(disDaq);
         end
         
         RestrictKeysForKbCheck([keys.esckey keys.akey]);

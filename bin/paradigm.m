@@ -193,7 +193,7 @@ set(t, 'Name', client.get_defaults_value('id'),...
         % Set-up output stream buffers for each conditions
         % Set a recording callback based on paradigm
         if any(strcmp('writeBuffer',properties(client)))
-            mkdir([idpath filesep run]);
+            mkdir();
             for group_i = 1:length(splitBy)
                 client.setUpOutputStream([client.get_defaults_value('id') filesep run filesep splitBy{group_i} '_' group_naming{strcmp(splitBy{group_i},group_naming(:,1)),2}]);
             end
@@ -217,11 +217,28 @@ set(t, 'Name', client.get_defaults_value('id'),...
             throw(ME);
         end
         
+        if any(strcmp('mainWriteCb',properties(client)))
+            if any(strcmp('csvFid',properties(client)))
+                csvFid = fopen([idpath filesep run filesep client.get_defaults_value('generaloutputname') '.' client.get_defaults_value('generaloutputtype')]);
+                client.csvFid = csvFid;
+            else
+                ME = client.missingParameter('csvFid');
+                throw(ME);
+            end
+            client.mainWriteCb = @mainWriteCb;
+        else
+            ME = client.missingParameter('mainWriteCb');
+            throw(ME);
+        end
+
         function writeCb(splitByString,value)
             % Add to an output buffer
             javaMethodEDT('appendToBuffer',client.writeBuffer{strcmp(splitByString,client.groups)},value);
         end
         
+        function mainWriteCb(cname,image,group,phase,onset)
+            fprintf(client.csvFid,'%s,%s,%s,%s,%d\n',cname,image,group,phase,onset);
+        end
     end
 
 end

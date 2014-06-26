@@ -11,6 +11,8 @@ classdef Client < handle
             'inputtype','PGM';
             'output','';
             'outputtype','1D';
+            'generaloutputname','all';
+            'generaloutputtype','csv';
             'io','';
             'writeinterval',60000;
             'staggerinterval',500;
@@ -35,7 +37,9 @@ classdef Client < handle
         data
         groups
         writeBuffer = {}
-        writeCb
+        writeCb % Java threads
+        csvFid
+        mainWriteCb % Matlab thread
     end
     
     methods (Static)
