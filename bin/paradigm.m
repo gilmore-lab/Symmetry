@@ -193,7 +193,7 @@ set(t, 'Name', client.get_defaults_value('id'),...
         % Set-up output stream buffers for each conditions
         % Set a recording callback based on paradigm
         if any(strcmp('writeBuffer',properties(client)))
-            mkdir();
+            mkdir([idpath filesep run]);
             for group_i = 1:length(splitBy)
                 client.setUpOutputStream([client.get_defaults_value('id') filesep run filesep splitBy{group_i} '_' group_naming{strcmp(splitBy{group_i},group_naming(:,1)),2}]);
             end
@@ -219,8 +219,14 @@ set(t, 'Name', client.get_defaults_value('id'),...
         
         if any(strcmp('mainWriteCb',properties(client)))
             if any(strcmp('csvFid',properties(client)))
-                csvFid = fopen([idpath filesep run filesep client.get_defaults_value('generaloutputname') '.' client.get_defaults_value('generaloutputtype')]);
-                client.csvFid = csvFid;
+                csvPath = [idpath filesep run filesep client.get_defaults_value('generaloutputname') '.' client.get_defaults_value('generaloutputtype')];
+                csvFid = fopen(csvPath,'w');
+                if csvFid~=-1
+                    client.csvFid = csvFid;
+                else
+                    ME = client.errorFileOpen(csvPath);
+                    throw(ME);
+                end
             else
                 ME = client.missingParameter('csvFid');
                 throw(ME);
@@ -237,8 +243,9 @@ set(t, 'Name', client.get_defaults_value('id'),...
         end
         
         function mainWriteCb(cname,image,group,phase,onset)
-            fprintf(client.csvFid,'%s,%s,%s,%s,%d\n',cname,image,group,phase,onset);
+            fprintf(client.csvFid,'%s,%s,%s,%s,%6.4f\n',cname,image,group,phase,onset);
         end
+        
     end
 
 end

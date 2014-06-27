@@ -90,14 +90,11 @@ classdef Invoke < handle
             secs = this.plugin.drawimg(src.IMAGE);
 %             % Matlab command-line verbosity
             this.verbosemsg = [msg sprintf('%s: %d\n%s: %6.2f\n','Onset',secs,'Relative Onset',secs - this.t0)];
-            this.write = {this.meta{this.iter}.group,secs-this.t0};
+            this.write = {this.meta{this.iter},secs-this.t0};
         end
         
         function debugRespond(this,src,evt)
-            this.write = {this.meta{this.iter}.name,...
-                this.meta{this.iter}.group,...
-                this.meta{this.iter}.image,...
-                GetSecs-this.t0};
+            this.write = {this.meta{this.iter},GetSecs-this.t0};
         end
         
         function stopcbk(this,src,evt,per)

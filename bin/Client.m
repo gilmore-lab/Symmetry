@@ -59,11 +59,14 @@ classdef Client < handle
             ME = MException('client:missingParameter', ...
                 'Parameter, "%s", value empty.', no_param);
         end
-        
         function ME = incorrectFileReference(wrong_path)
             ME = MException('client:incorrectFileReference', ...
                 'File path, "%s", is the incorrect reference for this build.', wrong_path);
         end
+        function ME = errorFileOpen(bad_path)
+            ME = MException('client:errorFileOpen', ...
+                'File, "%s", could not be opened.', bad_path);
+        end        
         
         function d = listDirectory(path,varargin)
             % Directory list
@@ -298,6 +301,10 @@ classdef Client < handle
             javaMethodEDT('stopAll',this.threadManager);
         end
         
+        function mainCloseFileCb(this)
+            fclose(this.csvFid);
+        end
+        
         function verboseDisplay(this,src,evt)
             if this.get_defaults_value('verbose')
                 disp('------')
@@ -307,23 +314,29 @@ classdef Client < handle
         end
         
         function write(this,src,evt)
+            meta = evt.AffectedObject.write{1};
+            t = evt.AffectedObject.write{2};
             if this.get_defaults_value('verbose')
                 fprintf('%s...\n','Client callback, group');
-                fprintf('\t%s\n',evt.AffectedObject.write{1});
+                fprintf('\t%s\n',meta.group);
                 fprintf('%s...\n','Client callback, time');
-                fprintf('\t%d\n',evt.AffectedObject.write{2});
+                fprintf('\t%d\n',t);
             end
-            this.writeCb(evt.AffectedObject.write{1},evt.AffectedObject.write{2});
+            this.writeCb(meta.group,t);
+            this.mainWriteCb(meta.cname,meta.image,meta.group,meta.phase,t);            
         end
         
         function debugCb(this,src,evt)
+            meta = evt.AffectedObject.write{1};
+            t = evt.AffectedObject.write{2};
             if this.get_defaults_value('verbose')
-                fprintf('%s...\n','Debug callback, group');
-                fprintf('\t%s\n',evt.AffectedObject.write{2});
-                fprintf('%s...\n','Debug callback, time');
-                fprintf('\t%d\n',evt.AffectedObject.write{4});
+                fprintf('%s...\n','Client callback, group');
+                fprintf('\t%s\n',meta.group);
+                fprintf('%s...\n','Client callback, time');
+                fprintf('\t%d\n',t);
             end
-            this.writeCb(evt.AffectedObject.write{2},evt.AffectedObject.write{4});
+            this.writeCb(meta.group,t);
+            this.mainWriteCb(meta.cname,meta.image,meta.group,meta.phase,t);
         end
     end
 end

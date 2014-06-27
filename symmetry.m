@@ -26,13 +26,13 @@ KbName('UnifyKeyNames');
 if client.get_defaults_value('debug')
     [~,~,setOutput,~,registerRoutine,debug_exec] = paradigm(client,plugin);
     routine = registerRoutine();
-    routine = [routine, cell([size(routine,1) 1])];
     setOutput(int2str(1));
     
     client.startThreads;
     debug_exec();
     client.stopThreads;
     client.cleanUpIO;
+    client.mainCloseFileCb();
 else
     
     [t,kill,setOutput,exp,registerRoutine] = paradigm(client,plugin);
@@ -44,8 +44,7 @@ else
     % Loop runs
     for i = 1:exp.run
         
-        tmp = registerRoutine();
-        routine{i} = [tmp, cell([size(tmp,1) 1])];
+        routine{i} = registerRoutine();
         setOutput(int2str(i));
         
         plugin.drawtxt('Preparing experiment. Please wait.');
@@ -93,6 +92,7 @@ else
         
         client.stopThreads;
         client.cleanUpIO;
+        client.mainCloseFileCb();
         
         if abort
             break;
