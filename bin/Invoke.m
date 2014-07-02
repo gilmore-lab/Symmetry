@@ -60,9 +60,12 @@ classdef Invoke < handle
             end
         end
         
-        function register(this,segment,meta)
+        function register(this,segment,meta,fix_chng)
             this.sequence{end+1} = segment;
             this.listenTo(segment);
+            if ~isempty(fix_chng)
+                meta.fix_chng = fix_chng;
+            end
             this.meta{end+1} = meta;
         end
         
@@ -87,8 +90,8 @@ classdef Invoke < handle
                 'Phase',this.meta{this.iter}.phase, ...
                 'Image',this.meta{this.iter}.image);
             this.plugin.setVerboseMsg(msg);
-            secs = this.plugin.drawimg(src.IMAGE);
-%             % Matlab command-line verbosity
+            secs = this.plugin.drawimg(src.IMAGE,src.FIX);
+            % Matlab command-line verbosity
             this.verbosemsg = [msg sprintf('%s: %d\n%s: %6.2f\n','Onset',secs,'Relative Onset',secs - this.t0)];
             this.write = {this.meta{this.iter},secs-this.t0};
         end

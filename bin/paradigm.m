@@ -149,6 +149,11 @@ set(t, 'Name', client.get_defaults_value('id'),...
         jitterOrder = jitterOrder(logical(condOrder)); % Idempotent
         % Deprecate in future release
         
+        % Fixation change threshold
+        p_chg = .7;
+        fix_switch = 1;
+        chng = false;
+            
         top_iter = condOrder; % Grouping 1
         iter_some_subvar = jitterOrder;
 
@@ -167,7 +172,12 @@ set(t, 'Name', client.get_defaults_value('id'),...
             % Multiple segment registration for iter_some_subvar
             data_index1 = datasample(index{1},iter_some_subvar(iter_index),'Replace',false); % R2011b
             for i = 1:length(data_index1)
-                inv.register(segment(data{data_index1(i)}),meta(data_index1(i)));
+                if rand(1,1) > p_chg;
+                    fix_switch = ~fix_switch;
+                    chng = true;
+                end
+                inv.register(segment(data{data_index1(i)},plugin.fix.color{1+fix_switch}),meta(data_index1(i)),chng);
+                chng = false;
                 routine(end+1,:) = {meta(data_index1(i)).cname,meta(data_index1(i)).image,meta(data_index1(i)).name,meta(data_index1(i)).phase};
                 % Keep data structure
             end
@@ -177,11 +187,23 @@ set(t, 'Name', client.get_defaults_value('id'),...
             data_index3 = index{top_iter(iter_index)+1+(length(var_n)/group_div)}(1);
             index{top_iter(iter_index)+1}(1) = []; % pop
             index{top_iter(iter_index)+1+(length(var_n)/group_div)}(1); % pop
+            
             % grouping2
-            inv.register(segment(data{data_index3}),meta(data_index3));
+            if rand(1,1) > p_chg;
+                fix_switch = ~fix_switch;
+                chng = true;
+            end
+            inv.register(segment(data{data_index3},plugin.fix.color{1+fix_switch}),meta(data_index3),chng);
+            chng = false;
             routine(end+1,:) = {meta(data_index3).cname,meta(data_index3).image,meta(data_index3).name,meta(data_index3).phase};
+            
             % grouping1
-            inv.register(segment(data{data_index2}),meta(data_index2));
+            if rand(1,1) > p_chg;
+                fix_switch = ~fix_switch;
+                chng = true;
+            end
+            inv.register(segment(data{data_index2},plugin.fix.color{1+fix_switch}),meta(data_index2),chng);
+            chng = false;
             routine(end+1,:) = {meta(data_index2).cname,meta(data_index2).image,meta(data_index2).name,meta(data_index2).phase};
         end
         
@@ -223,6 +245,8 @@ set(t, 'Name', client.get_defaults_value('id'),...
                 csvFid = fopen(csvPath,'w');
                 if csvFid~=-1
                     client.csvFid = csvFid;
+                    csvHead = {'Name','Image','Group','Phase','Onset(s)','FixChange','Response'};
+                    fprintf(client.csvFid,'%s,%s,%s,%s,%s,%s,%s\n',csvHead{:});
                 else
                     ME = client.errorFileOpen(csvPath);
                     throw(ME);
@@ -242,8 +266,8 @@ set(t, 'Name', client.get_defaults_value('id'),...
             javaMethodEDT('appendToBuffer',client.writeBuffer{strcmp(splitByString,client.groups)},value);
         end
         
-        function mainWriteCb(cname,image,group,phase,onset)
-            fprintf(client.csvFid,'%s,%s,%s,%s,%6.4f\n',cname,image,group,phase,onset);
+        function mainWriteCb(cname,image,group,phase,onset,fix,resp)
+            fprintf(client.csvFid,'%s,%s,%s,%s,%6.4f,%d,%d\n',cname,image,group,phase,onset,fix,resp);
         end
         
     end

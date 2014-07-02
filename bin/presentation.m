@@ -26,6 +26,12 @@ classdef presentation < handle
                 img = this.IMAGE;
             end
         end
+        function setFixation(this,fix)
+           this.FIX = fix; 
+        end
+        function FIX = getFixation(this)
+           FIX = this.FIX;
+        end        
     end
 
     methods (Abstract)

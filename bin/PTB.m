@@ -21,6 +21,7 @@ classdef PTB < handle
         white
         gray
         absoluteDifferenceBetweenWhiteAndGray
+        fix
     end
     
     methods (Static)
@@ -82,6 +83,10 @@ classdef PTB < handle
             center_W = rect(3)/2;
             center_H = rect(4)/2;
             
+            % PPD parameters
+            monitorWidth   = 48;   % horizontal dimension of viewable screen (cm)
+            viewingDistance      = 60;   % viewing distance (cm)
+            
             % ---------- Color Setup ----------
             % Gets color values.
             
@@ -99,6 +104,17 @@ classdef PTB < handle
             % code for white is less or greater than the CLUT color code for black.
             absoluteDifferenceBetweenWhiteAndGray = abs(white - gray);
             
+            % Fixation parameters
+            fix.color = {uint8([255, 0, 0]),uint8([0, 255, 0])};
+            fix.radius = .15;
+            fix.line = 2;
+            fix.type = {'FillOval'};
+            [ windowCenter(1), windowCenter(2) ] = RectCenter( rect );
+            pixelsPerDegree = ( pi / 360 ) * ( rect(3) - rect(1) ) ...
+                / atan(   ( monitorWidth / 2 ) / viewingDistance  );     % pixels per degree
+            fix.fixationPointCoordinates = [ (  windowCenter - ( fix.radius * pixelsPerDegree )  ) ...
+                (  windowCenter + ( fix.radius * pixelsPerDegree )  ) ];
+            
             % Data structure for monitor info
             obj.whichScreen = whichScreen;
             obj.center_W = center_W;
@@ -107,6 +123,7 @@ classdef PTB < handle
             obj.white = white;
             obj.gray = gray;
             obj.absoluteDifferenceBetweenWhiteAndGray = absoluteDifferenceBetweenWhiteAndGray;
+            obj.fix = fix;
             
             %             % Text formatting
             %             Screen('TextSize',monitor.display_window,20);
@@ -169,9 +186,12 @@ classdef PTB < handle
             this.flip;
         end
         
-        function [secs] = drawimg(this,img)
+        function [secs] = drawimg(this,img,fix_color)
             this.tex = Screen('MakeTexture',this.w,img);
             Screen('DrawTexture',this.w,this.tex);
+            if ~isempty(fix_color)
+                Screen(this.fix.type{1},this.w,fix_color,this.fix.fixationPointCoordinates);
+            end
             if this.debug
                 this.debugmsg = 'PTB.drawimg';
             end

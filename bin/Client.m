@@ -40,6 +40,7 @@ classdef Client < handle
         writeCb % Java threads
         csvFid
         mainWriteCb % Matlab thread
+        response % Default false
     end
     
     methods (Static)
@@ -316,14 +317,26 @@ classdef Client < handle
         function write(this,src,evt)
             meta = evt.AffectedObject.write{1};
             t = evt.AffectedObject.write{2};
+            if this.response
+                resp = 1;
+            else
+                resp = 0;
+            end
+            this.response = false;
+            
             if this.get_defaults_value('verbose')
                 fprintf('%s...\n','Client callback, group');
                 fprintf('\t%s\n',meta.group);
                 fprintf('%s...\n','Client callback, time');
                 fprintf('\t%d\n',t);
+                if meta.fix_chng
+                    fprintf('%s...\n','Client callback, fixation change');
+                end
+                fprintf('%s...\n','Client callback, response');
+                fprintf('\t%d\n',resp);
             end
             this.writeCb(meta.group,t);
-            this.mainWriteCb(meta.cname,meta.image,meta.group,meta.phase,t);            
+            this.mainWriteCb(meta.cname,meta.image,meta.group,meta.phase,t,meta.fix_chng,resp);            
         end
         
         function debugCb(this,src,evt)

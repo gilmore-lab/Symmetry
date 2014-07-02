@@ -46,6 +46,7 @@ else
         
         routine{i} = registerRoutine();
         setOutput(int2str(i));
+        tExecuted = 0;
         
         plugin.drawtxt('Preparing experiment. Please wait.');
         client.startThreads;
@@ -86,6 +87,15 @@ else
                     kill(t);
                     abort = 1;
                     break;
+                elseif find(keyCode)==keys.akey
+                    if tExecuted ~= get(t,'TasksExecuted')
+                        tExecuted = get(t,'TasksExecuted');
+                        client.response = true;
+                        if client.get_defaults_value('verbose')
+                            fprintf('%s...\n','Behavioral response detected, task');
+                            fprintf('\t%d\n',tExecuted);
+                        end
+                    end
                 end
             end
         end
@@ -103,47 +113,5 @@ else
     delete(t);
     plugin.endPres;
 end
-
-% % Initializing
-% stimonset = [];
-
-% % Task
-% RT = 0;
-% Hit = 0;
-% Miss = 0;
-
-% % Calculating pixelsPerDegree
-% monitorWidth   = 48;   % horizontal dimension of viewable screen (cm)
-% viewingDistance      = 60;   % viewing distance (cm)
-%
-% % Fixation setup
-% fixationPointRadius = 0.15;
-% [ windowCenter(1), windowCenter(2) ] = RectCenter( windowRectangle );
-% pixelsPerDegree = ( pi / 360 ) * ( windowRectangle(3) - windowRectangle(1) ) ...
-%                     / atan(   ( monitorWidth / 2 ) / viewingDistance  );     % pixels per degree
-% params.display.fixationPointCoordinates = [ (  windowCenter - ( fixationPointRadius * pixelsPerDegree )  ) ...
-%                 (  windowCenter + ( fixationPointRadius * pixelsPerDegree )  ) ];
-
-%     if keyIsDown
-%         if keyCode(escapeKey)
-%
-%             stop(t)
-%             disp('User Cancelled')
-%
-%         elseif keyCode(cKey)
-%
-%             RT =  sec - get(t,'UserData');
-%
-%             % If there was a change at this task (Hit)
-%             if pres_cell{get(t,'TasksExecuted') + 1, 4} % Accounting for initial flip
-%                 Hit = 1;
-%             end % End if: pres_cell{stimind, 4}
-%
-%             KbReleaseWait; % Wait for release
-%
-%         end % End if: keyCode(escapeKey)
-%     end % End if: keyIsDown
-%
-% end % End while: strcmp('on', get(t, 'Running'))
 
 end % End primary function
