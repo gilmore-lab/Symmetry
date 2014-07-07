@@ -111,14 +111,14 @@ classdef Client < handle
         function d = parseListing(list)
             % Parse directory listing
             % Only tested on PC
-            if ispc
+%             if ispc
                 d = regexp(list(1:end-1),'\n','split');
                 if strcmp(d,'File Not Found')
                     d = [];
                 end
-            else
-                error('client (parseListing): Unsupported OS.');
-            end
+%             else
+%                 error('client (parseListing): Unsupported OS.');
+%             end
         end
     end
     
@@ -165,7 +165,9 @@ classdef Client < handle
         
         function bootstrap(this)
             % Random seed
-            rng('shuffle'); % R2011b
+            %             rng('shuffle'); % R2011b
+            s = RandStream('mt19937ar','Seed','shuffle');
+            RandStream.setGlobalStream(s);
             
             % Assert file existence and validity
             for i = 1:size(this.build,1)

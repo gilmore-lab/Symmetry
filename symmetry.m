@@ -19,8 +19,8 @@ flags = {
 client = Client(flags);
 client.bootstrap;
 
-% plugin = PTB(client.get_defaults_value('debug'),client.get_defaults_value('verbose'));
-plugin = PTB(~client.get_defaults_value('debug'),client.get_defaults_value('verbose'));
+plugin = PTB(client.get_defaults_value('debug'),client.get_defaults_value('verbose'));
+% plugin = PTB(~client.get_defaults_value('debug'),client.get_defaults_value('verbose'));
 KbName('UnifyKeyNames');
         
 if client.get_defaults_value('debug')
