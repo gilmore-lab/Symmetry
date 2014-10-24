@@ -1,3 +1,14 @@
+
+% Main script for fmri-event-related-pilot study
+% Author: Ken R. Hwang
+% URL: https://github.com/gilmore-lab/Symmetry.git
+% branch: v2
+
+% History
+% 
+% 2014-10-24-12:20 rogilmore edited
+
+
 function [routine] = symmetry
 
 p = mfilename('fullpath');
