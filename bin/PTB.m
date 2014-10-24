@@ -28,7 +28,10 @@ classdef PTB < handle
         function [keys] = keyGet
             % Key prep
             KbName('UnifyKeyNames');
-            keys.akey = KbName('a');
+            keys.akey = KbName('a'); % Left thumb/index a, b
+            keys.bkey = KbName('b');
+            keys.ckey = KbName('c'); % Right thumb/index d, c
+            keys.dkey = KbName('d');
             keys.tkey = KbName('t');
             keys.esckey = KbName('Escape');
             keys.spacekey = KbName('SPACE');

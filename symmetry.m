@@ -87,7 +87,8 @@ else
                     kill(t);
                     abort = 1;
                     break;
-                elseif find(keyCode)==keys.akey
+                % Detect if valid key is pressed (b or c using grips)
+                elseif ( find(keyCode)==keys.bkey ) || ( find(keyCode)==keys.ckey ) )
                     if tExecuted ~= get(t,'TasksExecuted')
                         tExecuted = get(t,'TasksExecuted');
                         client.response = true;
