@@ -1,4 +1,3 @@
-
 % Main script for fmri-event-related-pilot study
 % Author: Ken R. Hwang
 % URL: https://github.com/gilmore-lab/Symmetry.git
@@ -6,8 +5,9 @@
 
 % History
 % 
-% 2014-10-24-12:20 rogilmore edited
-
+% 2014-10-24-1220 rogilmore edited
+% 2014-10-24-1510 rogilmore and xxb4 edited
+% 2014-10-26-1653 rogilmore edited
 
 function [routine] = symmetry
 
@@ -22,7 +22,7 @@ flags = {
     'debug',false;
     'verbose',true;
     'path',p;
-    'input','stim';
+    'input','stim-p1-p2-p3-p4-p6'; % directory name for PGM stimulus files
     'output','data';
     'io','io';    
     };
@@ -87,7 +87,8 @@ else
             WaitSecs(disDaq);
         end
         
-        RestrictKeysForKbCheck([keys.esckey keys.akey]);
+        % Enable ESC + {a,b,c,d} for any key press from grips
+        RestrictKeysForKbCheck([keys.esckey keys.akey keys.bkey keys.ckey keys.dkey]);
         
         start(t);
         

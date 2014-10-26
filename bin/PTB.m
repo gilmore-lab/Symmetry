@@ -1,3 +1,9 @@
+% PTM.m
+% 
+
+% history
+% 2014-10-26 rogilmore modified
+
 classdef PTB < handle
     %ptb Summary of this class goes here
     %   Detailed explanation goes here
